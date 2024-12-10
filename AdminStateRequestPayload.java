@@ -3,8 +3,9 @@ package com.janaushadhi.adminservice.requestpayload;
 import java.util.List;
 
 import lombok.Data;
+
 @Data
-public class AdminDistrictPayload {
-	
-	private List<Long> districtId;
+public class AdminStateRequestPayload {
+	private List<Integer> stateIds;
+
 }
