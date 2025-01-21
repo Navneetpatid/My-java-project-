@@ -1,30 +1,46 @@
-package com.janaushadhi.adminservice.entity;
+pipeline {
+    agent any
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out code...'
+                checkout scm
+            }
+        }
 
-import java.util.Date;
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                sh './gradlew build' // Adjust to your build command
+            }
+        }
 
-@Data
-@Entity
-@AllArgsConstructor
-@NoArgsConstructor
-@Table(name = "admin_add_kendra")
-public class AddKendra {
-    @Id
-    @GeneratedValue(strategy =  GenerationType.IDENTITY)
-    private  Long id;
-    private String contactPerson;
-    private String storeCode;
-    private Long pinCode;
-    private Long stateId;
-    private Long districtId;
-    private String kendraAddress;
-    private Date createdDate;
-    private Date updatedDate;
-    private Short status;
-    private String latitude;
-    private String longitude;
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                sh './gradlew test' // Adjust to your test command
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying the application...'
+                sh './deploy.sh' // Replace with your deployment script
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
 }
