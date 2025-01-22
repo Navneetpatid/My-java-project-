@@ -1,65 +1,26 @@
-import java.text.SimpleDateFormat
+def customHealthcheckFromFile(String defaultStatusCode = "200") {
+    // File path for URLs and parameters
+    def urlFilePath = "resources/url.txt"
 
-@Field String rundate
+    // Read the file line by line (each line should have: URL expectedStatusCode)
+    def urlsAndCodes = new File(urlFilePath).readLines()
 
-def call(Map config) {
-    this.config = config
+    // Process each URL with its custom or default expected status code
+    urlsAndCodes.each { line ->
+        def parts = line.split("\\s+") // Split by space or tab
+        def url = parts[0]
+        def expectedStatusCode = parts.size() > 1 ? parts[1] : defaultStatusCode // Use custom or default
 
-    node {
-        // Logger and other initializations
-        logger = new Logger()
-        pushMiEventToSplunk = new PushMiEventToSplunk(logger)
-        miEvent = new MIEvent()
-        splunkRequestBody = new SplunkRequestBody()
-
-        // Pipeline stages
-        stage('Checkout') {
-            steps {
-                script {
-                    // Clean workspace
-                    cleanWs()
-
-                    // Checkout the repository (if applicable)
-                    gitCheckout()
-
-                    // Define the file path
-                    def resourcesDir = "${env.WORKSPACE}/resources"
-                    def emailDataFile = "${resourcesDir}/email_data.txt"
-
-                    // Ensure the resources folder and file exist
-                    if (!fileExists(resourcesDir)) {
-                        error "Resources directory not found: ${resourcesDir}"
-                    }
-                    if (!fileExists(emailDataFile)) {
-                        error "File not found: ${emailDataFile}"
-                    }
-
-                    // Append status to email_data.txt
-                    sh "echo 'DATE ENVIRONMENT CP DATAPLANE STATUS' >> ${emailDataFile}"
-
-                    // List contents of resources folder for debugging
-                    sh "ls -l ${resourcesDir}"
-
-                    // Read and print the file content
-                    def fileContent = readFile(emailDataFile)
-                    echo "File Content:\n${fileContent}"
-                }
-            }
-        }
-
-        stage('Health Check') {
-            steps {
-                script {
-                    // Example health check method (replace with actual logic)
-                    performHealthCheckFromResources('email_data.txt', 200)
-                }
-            }
-        }
-
-        post {
-            always {
-                echo "Pipeline execution completed."
-            }
-        }
+        sh """
+        response_data=\$(curl -sL -k -w '%{http_code}' ${url} -o /dev/null)
+        if [ "\$response_data" == "${expectedStatusCode}" ]; then
+            echo "${url} Passed with response code: \$response_data" >> email_data.txt
+        else
+            echo "${url} Failed with response code: \$response_data (Expected: ${expectedStatusCode})" >> email_data.txt
+        fi
+        """
     }
+
+    // Print results
+    cat email_data.txt
 }
