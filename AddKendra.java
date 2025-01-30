@@ -1,35 +1,27 @@
-def passedUrls = []
-def failedUrls = []
+import java.net.HttpURLConnection
+import java.net.URL
 
-urlLines.each { line ->
+// Read URLs from file
+def file = new File("urls.txt")
+def urls = file.readLines()
+
+def results = []
+
+urls.each { url ->
     try {
-        def parts = line.trim().split("\\s+") // Split line into parts
-        def url = parts[0]                   // First part is the URL
-        def expectedStatusCode = parts.size() > 1 ? parts[1].toInteger() : defaultStatusCode
-        def response = httpRequest(
-            url: url
-        )
-        def actualStatusCode = response.status as Integer
-
-        if (actualStatusCode == expectedStatusCode) {
-            echo "${url} - SUCCESS (Response Code: ${actualStatusCode})"
-            passedUrls << url
-            sh "echo '${url} Passed' >> email_data.txt"
-        } else {
-            echo "${url} - FAILED (Expected: ${expectedStatusCode}, Actual: ${actualStatusCode})"
-            failedUrls << url
-            sh "echo '${url} FAILED (Response Code: ${actualStatusCode})' >> email_data.txt"
-        }
-    } catch (hudson.AbortException e) {
-        echo "${line} - ERROR: ${e.message}"
-        failedUrls << line // Add the entire line if the URL failed due to an error
+        URL site = new URL(url)
+        HttpURLConnection connection = (HttpURLConnection) site.openConnection()
+        connection.setRequestMethod("GET")
+        connection.setConnectTimeout(5000)
+        connection.connect()
+        int statusCode = connection.getResponseCode()
+        results << "$url - Status: $statusCode"
+    } catch (Exception e) {
+        results << "$url - ERROR: ${e.message}"
     }
 }
 
-// Write the summary to email
-def emailBody = "Summary:\n\nPassed URLs:\n"
-emailBody += passedUrls.join("\n") + "\n\nFailed URLs:\n"
-emailBody += failedUrls.join("\n")
+// Write results to a file
+new File("health_results.txt").text = results.join("\n")
 
-writeFile file: 'email_summary.txt', text: emailBody
-echo "Email summary written to email_summary.txt"
+println "Health check complete. Results saved in health_results.txt"
