@@ -1,56 +1,58 @@
-// Function to load JSON file
-def loadJsonFile(String filePath) {
+import groovy.json.JsonSlurper
+
+// Function to extract JSON data and print it in CSV format
+def convertJsonToCsv(jsonData) {
     try {
-        def fileContent = libraryResource(filePath)
-        def jsonData = new JsonSlurper().parseText(fileContent)
-        return jsonData
+        // Check if JSON contains the expected "counters" key
+        if (jsonData instanceof Map && jsonData.containsKey("counters")) {
+            def headers = ["bucket", "request_count"]
+            println headers.join(",")  // Print CSV headers
+
+            jsonData.counters.each { item ->
+                if (item instanceof Map && item.containsKey("bucket") && item.containsKey("request_count")) {
+                    def row = [item.bucket, item.request_count]
+                    println row.join(",")  // Print CSV row
+                }
+            }
+        } else {
+            println("Error: Unexpected JSON structure. Expected 'counters' key.")
+        }
     } catch (Exception e) {
-        echo "Error reading JSON file: ${e.message}"
+        println("Error converting JSON to CSV: ${e.message}")
+    }
+}
+
+// Function to load JSON file
+def loadJsonFile(filePath) {
+    try {
+        def jsonFile = new File(filePath)
+        if (jsonFile.exists()) {
+            return new JsonSlurper().parseText(jsonFile.text)
+        } else {
+            println("Error: JSON file not found.")
+            return null
+        }
+    } catch (Exception e) {
+        println("Error reading JSON file: ${e.message}")
         return null
     }
 }
 
-// Function to convert JSON to CSV
-def convertJsonToCsv(Map jsonData, String csvFilePath) {
-    try {
-        def csvFile = new File(csvFilePath)
-        csvFile.withWriter { writer ->
-            def headers = []
-            def rows = []
-            
-            if (jsonData.containsKey("counters")) {
-                jsonData.counters.eachWithIndex { item, index ->
-                    if (index == 0) {
-                        headers = item.keySet() as List
-                        writer.writeLine(headers.join(','))
-                    }
-                    def row = headers.collect { key -> item.get(key, '') }
-                    writer.writeLine(row.join(','))
-                }
-                echo "CSV file created successfully: ${csvFilePath}"
-            } else {
-                echo "Error: JSON structure missing 'counters' key"
-            }
-        }
-    } catch (Exception e) {
-        echo "Error converting JSON to CSV: ${e.message}"
-    }
-}
-
-// Main processing function
+// Main function to process JSON and convert to CSV format
 def processJson() {
-    def jsonFilePath = "dev-HK_license.json"
-    def csvFilePath = "resources/dev-HK_license.csv"
-    
+    def jsonFilePath = "dev-HK_license.json"  // Path to JSON file
     def jsonData = loadJsonFile(jsonFilePath)
-    if (!jsonData) {
-        echo "JSON file loading failed"
+
+    if (jsonData == null) {
+        println("JSON file loading failed.")
         return
     }
-    
-    echo "Successfully loaded JSON file: ${jsonFilePath}"
-    convertJsonToCsv(jsonData, csvFilePath)
+
+    println("Successfully loaded JSON file: ${jsonFilePath}")
+
+    // Convert JSON to CSV and print
+    convertJsonToCsv(jsonData)
 }
 
-// Execute the process
+// Execute the function
 processJson()
