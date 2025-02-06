@@ -1,71 +1,49 @@
-import java.net.HttpURLConnection
-import java.net.URL
-import javax.mail.*
-import javax.mail.internet.*
+import groovy.json.JsonSlurper
+import java.nio.file.Files
+import java.nio.file.Paths
 
-// Function to perform the health check
-def healthCheck() {
-    def file = new File("resources/URL.txt")
-    def urls = file.readLines()
-    def results = []
-
-    urls.each { url ->
-        try {
-            URL site = new URL(url)
-            HttpURLConnection connection = (HttpURLConnection) site.openConnection()
-            connection.setRequestMethod("GET")
-            connection.setConnectTimeout(5000)
-            connection.connect()
-            int statusCode = connection.getResponseCode()
-            if (statusCode == 200) {
-                results << "${url} - PASSES (Status: ${statusCode})"
-            } else {
-                results << "${url} - FAILED (Status: ${statusCode})"
-            }
-        } catch (Exception e) {
-            results << "${url} - ERROR: ${e.message}"
-        }
-    }
-
-    def resultFile = new File("health_results.txt")
-    resultFile.text = results.join("\n")
-    return results.join("\n")
-}
-
-// Function to send email notification
-def sendEmail(reportContent) {
-    def emailHost = "smtp.your-email-provider.com" // Replace with your SMTP host
-    def emailPort = "587" // Replace with the correct port
-    def username = "your-email@example.com" // Replace with your email address
-    def password = "your-email-password" // Replace with your email password
-    def recipient = "recipient@example.com" // Replace with the recipient's email address
-
-    Properties props = new Properties()
-    props.put("mail.smtp.host", emailHost)
-    props.put("mail.smtp.port", emailPort)
-    props.put("mail.smtp.auth", "true")
-    props.put("mail.smtp.starttls.enable", "true")
-
-    Session session = Session.getInstance(props, new Authenticator() {
-        protected PasswordAuthentication getPasswordAuthentication() {
-            return new PasswordAuthentication(username, password)
-        }
-    })
-
+// Function to read and parse JSON file
+def readJsonFile(filePath) {
     try {
-        Message message = new MimeMessage(session)
-        message.setFrom(new InternetAddress(username))
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient))
-        message.setSubject("Health Check Report")
-        message.setText("Here is the health check report:\n\n${reportContent}")
-
-        Transport.send(message)
-        println "Email sent successfully."
-    } catch (MessagingException e) {
-        println "Failed to send email: ${e.message}"
+        def jsonFile = new File(filePath)
+        return new JsonSlurper().parse(jsonFile)
+    } catch (Exception e) {
+        println "Error reading JSON file: ${e.message}"
+        return null
     }
 }
 
-// Main code execution
-def reportContent = healthCheck()
-sendEmail(reportContent)
+// Function to write data to CSV
+def writeCsvFile(csvFilePath, jsonData) {
+    try {
+        def csvFile = new File(csvFilePath)
+        csvFile.withWriter('UTF-8') { writer ->
+            // Writing CSV header
+            writer.writeLine("services_count,rbac_users,kong_version,db_version,system_info,workspaces_count,request_count,bucket")
+
+            // Writing general JSON data
+            def systemInfo = "${jsonData.system_info.uname} | ${jsonData.system_info.hostname} | Cores: ${jsonData.system_info.cores}"
+            writer.writeLine("${jsonData.services_count},${jsonData.rbac_users},${jsonData.kong_version},${jsonData.db_version},\"${systemInfo}\",${jsonData.workspaces_count},,")
+
+            // Writing "counters" data
+            jsonData.counters.each { counter ->
+                writer.writeLine(",,,,,,,${counter.request_count},${counter.bucket}")
+            }
+        }
+        println "CSV file generated: ${csvFilePath}"
+    } catch (Exception e) {
+        println "Error writing CSV file: ${e.message}"
+    }
+}
+
+// File paths
+def jsonFilePath = "resources/dev-HK_license.json"
+def csvFilePath = "resources/dev-HK_license.csv"
+
+// Read JSON and convert to CSV
+def jsonData = readJsonFile(jsonFilePath)
+if (jsonData) {
+    writeCsvFile(csvFilePath, jsonData)
+} else {
+    println "Failed to convert JSON to CSV."
+        }
