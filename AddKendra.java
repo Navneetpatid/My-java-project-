@@ -5,20 +5,15 @@ import java.nio.file.Paths
 // Function to load JSON from a file
 def loadJsonFile(String filePath) {
     try {
-        def file = new File(filePath)
-        if (!file.exists()) {
-            println("Error: JSON file not found - ${filePath}")
-            return null
-        }
-        def jsonText = file.text
-        return new JsonSlurper().parseText(jsonText)
+        def fileContent = new File(filePath).text
+        return new JsonSlurper().parseText(fileContent)
     } catch (Exception e) {
         println("Error reading JSON file: ${e.message}")
         return null
     }
 }
 
-// Function to convert JSON data to CSV format
+// Function to convert JSON to CSV
 def convertJsonToCsv(jsonData, String csvFilePath) {
     try {
         def csvFile = new File(csvFilePath)
@@ -48,11 +43,10 @@ def convertJsonToCsv(jsonData, String csvFilePath) {
 
 // Main function to process JSON and generate CSV
 def processJson() {
-    def jsonFilePath = "resources/dev-HK_license.json"
+    def jsonFilePath = "dev-HK_license.json"
     def csvFilePath = "resources/dev-HK_license.csv"
 
     def jsonData = loadJsonFile(jsonFilePath)
-
     if (jsonData == null) {
         println("JSON file loading failed.")
         return
@@ -65,5 +59,5 @@ def processJson() {
     convertJsonToCsv(jsonData, csvFilePath)
 }
 
-// Execute the script
+// Run the process
 processJson()
