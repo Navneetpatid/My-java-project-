@@ -36,14 +36,17 @@ def writeCsvFile(csvFilePath, jsonData) {
     }
 }
 
-// File paths
+// **Main function to execute JSON to CSV conversion**
+def convertJsonToCsv(jsonFilePath, csvFilePath) {
+    def jsonData = readJsonFile(jsonFilePath)
+    if (jsonData) {
+        writeCsvFile(csvFilePath, jsonData)
+    } else {
+        println "Failed to convert JSON to CSV."
+    }
+}
+
+// **Calling the function**
 def jsonFilePath = "resources/dev-HK_license.json"
 def csvFilePath = "resources/dev-HK_license.csv"
-
-// Read JSON and convert to CSV
-def jsonData = readJsonFile(jsonFilePath)
-if (jsonData) {
-    writeCsvFile(csvFilePath, jsonData)
-} else {
-    println "Failed to convert JSON to CSV."
-        }
+convertJsonToCsv(jsonFilePath, csvFilePath)
