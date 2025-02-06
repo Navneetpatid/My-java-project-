@@ -1,22 +1,29 @@
 import groovy.json.JsonSlurper
+import java.io.File
 
-// Function to extract JSON data and print it in CSV format
-def convertJsonToCsv(jsonData) {
+// Function to convert JSON to CSV
+def convertJsonToCsv(jsonData, csvFilePath) {
     try {
-        // Check if JSON contains the expected "counters" key
-        if (jsonData instanceof Map && jsonData.containsKey("counters")) {
-            def headers = ["bucket", "request_count"]
-            println headers.join(",")  // Print CSV headers
+        def headers = ["services_count", "rbac_users", "kong_version", "db_version", 
+                       "uname", "hostname", "cores", "workspaces_count", "license_key", 
+                       "bucket", "request_count"]
+
+        def csvFile = new File(csvFilePath)
+        csvFile.withWriter { writer ->
+            writer.writeLine(headers.join(","))  // Write headers
 
             jsonData.counters.each { item ->
-                if (item instanceof Map && item.containsKey("bucket") && item.containsKey("request_count")) {
-                    def row = [item.bucket, item.request_count]
-                    println row.join(",")  // Print CSV row
-                }
+                def row = [
+                    jsonData.services_count, jsonData.rbac_users, 
+                    jsonData.kong_version, jsonData.db_version,
+                    jsonData.system_info.uname, jsonData.system_info.hostname, jsonData.system_info.cores,
+                    jsonData.workspaces_count, jsonData.license_key,
+                    item.bucket, item.request_count
+                ]
+                writer.writeLine(row.join(","))  // Write row
             }
-        } else {
-            println("Error: Unexpected JSON structure. Expected 'counters' key.")
         }
+        println("CSV file created successfully: ${csvFilePath}")
     } catch (Exception e) {
         println("Error converting JSON to CSV: ${e.message}")
     }
@@ -39,8 +46,9 @@ def loadJsonFile(filePath) {
 }
 
 // Main function to process JSON and convert to CSV format
-def processJson() {
-    def jsonFilePath = "dev-HK_license.json"  // Path to JSON file
+def processJsonToCsv() {
+    def jsonFilePath = "dev-HK_license.json"  // Path to your JSON file
+    def csvFilePath = "output.csv"  // Output CSV file name
     def jsonData = loadJsonFile(jsonFilePath)
 
     if (jsonData == null) {
@@ -50,9 +58,9 @@ def processJson() {
 
     println("Successfully loaded JSON file: ${jsonFilePath}")
 
-    // Convert JSON to CSV and print
-    convertJsonToCsv(jsonData)
+    // Convert JSON to CSV
+    convertJsonToCsv(jsonData, csvFilePath)
 }
 
 // Execute the function
-processJson()
+processJsonToCsv()
