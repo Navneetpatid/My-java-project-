@@ -1,56 +1,71 @@
 import groovy.json.JsonSlurper
-import java.nio.file.*
 
+def processJson() {
+    // List of JSON file paths
+    def jsonFilePaths = [
+        "resources/dev-HK_license.json",
+        "resources/dev-UK_license.json",
+        "resources/ppd-HK_license.json",
+        "resources/ppd-UK_license.json",
+        "resources/prd-HK_license.json",
+        "resources/prd-UK_license.json"
+    ]
+
+    def allJsonData = [] // Store parsed JSON data
+
+    // ✅ Iterate over each JSON file and load data
+    jsonFilePaths.each { filePath ->
+        def jsonData = loadJsonFile(filePath) // Load JSON
+        if (jsonData == null) {
+            println("❌ JSON file loading failed: ${filePath}")
+            return // Skip this file
+        }
+        println("✅ Successfully loaded JSON file: ${filePath}")
+        allJsonData << [filePath, jsonData] // Store file name + data
+    }
+
+    if (allJsonData.isEmpty()) {
+        println("⚠️ No valid JSON files to process.")
+        return
+    }
+
+    // ✅ Convert JSON data to CSV format (without saving)
+    convertJsonToCsv(allJsonData)
+}
+
+// ✅ Function to load JSON file
 def loadJsonFile(filePath) {
     try {
-        def fileContent = libraryResource(filePath) // Read JSON file
-        def jsonData = new JsonSlurper().parseText(fileContent)
-        return jsonData
+        def fileContent = new File(filePath).text
+        return new JsonSlurper().parseText(fileContent) // Parse JSON
     } catch (Exception e) {
-        echo "Error reading JSON file: ${e.message}"
+        println("❌ Error reading JSON file: ${filePath} - ${e.message}")
         return null
     }
 }
 
-def processJsonFiles(folderPath) {
-    try {
-        def folder = new File(folderPath)
-        if (!folder.exists() || !folder.isDirectory()) {
-            echo "Error: Specified folder does not exist or is not a directory."
-            return
-        }
+// ✅ Function to convert JSON to CSV (Prints to Console)
+def convertJsonToCsv(jsonDataList) {
+    def headers = ["File", "RBAC_Users", "Workspaces_Count", "System_Info", "DB_Version", "Kong_Version"]
+    
+    // Print CSV headers
+    println(headers.join(","))
 
-        def jsonFiles = folder.listFiles().findAll { it.name.endsWith('.json') }
-        if (jsonFiles.isEmpty()) {
-            echo "No JSON files found in the folder."
-            return
-        }
+    jsonDataList.each { entry ->
+        def filePath = entry[0]
+        def jsonData = entry[1]
 
-        // Print CSV Headers
-        def headers = ["Environment", "RBAC_Users", "Workspaces_Count", "System_Info", "DB_Version", "Kong_Version", "Services_Count"]
-        println headers.join(",")
+        // Extract fields
+        def rbacUsers = jsonData.rbac_users ?: "N/A"
+        def workspacesCount = jsonData.workspaces_count ?: "N/A"
+        def systemInfo = "uname-${jsonData.system_info?.uname ?: "N/A"} hostname-${jsonData.system_info?.hostname ?: "N/A"}"
+        def dbVersion = jsonData.db_version ?: "N/A"
+        def kongVersion = jsonData.kong_version ?: "N/A"
 
-        jsonFiles.each { file ->
-            def jsonData = loadJsonFile("resources/${file.name}")
-            if (jsonData == null) return // Skip if JSON loading failed
-
-            // Extract fields
-            def environment = file.name.replace(".json", "")
-            def rbacUsers = jsonData.rbac_users
-            def workspacesCount = jsonData.workspaces_count
-            def systemInfo = "uname:-${jsonData.system_info.uname} hostname:-${jsonData.system_info.hostname} cores:-${jsonData.system_info.cores}"
-            def dbVersion = jsonData.db_version
-            def kongVersion = jsonData.kong_version
-            def servicesCount = jsonData.services_count
-
-            // Print CSV row
-            def row = [environment, rbacUsers, workspacesCount, systemInfo, dbVersion, kongVersion, servicesCount]
-            println row.join(",")
-        }
-    } catch (Exception e) {
-        echo "Error processing files: ${e.message}"
+        // Print CSV row
+        println([filePath, rbacUsers, workspacesCount, systemInfo, dbVersion, kongVersion].join(","))
     }
 }
 
-// Call the function with your resources folder path
-processJsonFiles("resources")
+// Run the function
+processJson()
