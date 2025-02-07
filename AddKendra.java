@@ -12,12 +12,25 @@ def loadJsonFile(filePath) {
     }
 }
 
-// Function to extract and print values
-def extractAndPrintValues(jsonData) {
+// Function to extract and print values with environment name
+def extractAndPrintValues(jsonData, filePath) {
     if (jsonData) {
+        // Extract environment name from file name
+        def fileName = new File(filePath).getName()
+        def environment = fileName.replace(".json", "")  // Remove .json extension
+
+        // Define headers
+        def headers = ["Environment", "rbac_users", "workspaces_count"]
+        
+        // Print headers
+        println headers.join(",")
+
+        // Extract values
         def rbacUsers = jsonData.rbac_users
         def workspacesCount = jsonData.workspaces_count
-        println "rbac_users: ${rbacUsers}, workspaces_count: ${workspacesCount}"
+
+        // Print values with environment name
+        println "${environment},${rbacUsers},${workspacesCount}"
     } else {
         println "❌ JSON data is null or incorrect format"
     }
@@ -28,4 +41,4 @@ def jsonFilePath = "/mnt/data/file-48NCNMp7sNk2mwV2x29DxY"
 
 // 🔍 Load JSON and extract values
 def jsonData = loadJsonFile(jsonFilePath)
-extractAndPrintValues(jsonData)
+extractAndPrintValues(jsonData, jsonFilePath)
