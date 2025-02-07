@@ -1,37 +1,29 @@
-import groovy.json.JsonSlurper
-
-// Function to load JSON from a file
-def loadJsonFile(filePath) {
-    try {
-        def fileContent = libraryResource(filePath)  // Load file as text
-        echo "${fileContent}"  // Print raw JSON content (for debugging)
-        
-        // Parse JSON
-        def jsonData = new JsonSlurper().parseText(fileContent)
-        return jsonData
-    } catch (Exception e) {
-        echo "Error reading JSON file: ${e.message}"
-        return null
-    }
-}
-
-// Function to extract values and print in required format
 def convertJsonToCsv(jsonData, filePath) {
     try {
         if (jsonData) {
-            // Extract environment name from file path (Example: "dev-UK.json" -> "dev-UK")
+            // Extract environment name from file path
             def environment = new File(filePath).getName().replace(".json", "")
 
-            // Define headers
-            def headers = ["Environment", "rbac_users", "workspaces_count"]
+            // Manually extract values (excluding "counters")
+            def servicesCount = jsonData.services_count
+            def rbacUsers = jsonData.rbac_users
+            def kongVersion = jsonData.kong_version
+            def dbVersion = jsonData.db_version
+            def uname = jsonData.system_info.uname
+            def hostname = jsonData.system_info.hostname
+            def cores = jsonData.system_info.cores
+            def workspacesCount = jsonData.workspaces_count
+            def licenseKey = jsonData.license_key
+
+            // Define headers and values
+            def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version",
+                           "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
             println headers.join(",")
 
-            // Extract values
-            def rbacUsers = jsonData.rbac_users
-            def workspacesCount = jsonData.workspaces_count
+            def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion, uname, hostname,
+                          cores, workspacesCount, licenseKey]
+            println values.join(",")
 
-            // Print values in a single string format
-            println "${environment},${rbacUsers},${workspacesCount}"
         } else {
             echo "Error: JSON data is null or incorrect format"
         }
@@ -39,10 +31,3 @@ def convertJsonToCsv(jsonData, filePath) {
         echo "Error processing JSON: ${e.message}"
     }
 }
-
-// 📂 Set the file path (replace with actual path if needed)
-def jsonFilePath = "/mnt/data/file-GhysiA78jwxLVuBAjtPiH3"
-
-// 🔍 Load JSON and convert it
-def jsonData = loadJsonFile(jsonFilePath)
-convertJsonToCsv(jsonData, jsonFilePath)
