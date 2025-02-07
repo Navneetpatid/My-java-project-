@@ -1,57 +1,31 @@
 import groovy.json.JsonSlurper
+import java.nio.file.Files
+import java.nio.file.Paths
 
-// Function to convert JSON to CSV
-def convertJsonToCsv(jsonData) {
-    try {
-        def headers = "services_count,rbac_users,kong_version,db_version,uname,hostname,cores,workspaces_count,license_key,bucket,request_count\n"
-        def csvContent = new StringBuilder(headers)
-
-        jsonData.counters.each { item ->
-            def row = [
-                jsonData.services_count, jsonData.rbac_users, 
-                jsonData.kong_version, jsonData.db_version,
-                jsonData.system_info.uname, jsonData.system_info.hostname, jsonData.system_info.cores,
-                jsonData.workspaces_count, jsonData.license_key,
-                item.bucket, item.request_count
-            ].join(",")
-
-            csvContent.append(row).append("\n")
-        }
-
-        // Use Jenkins-safe method instead of File.write
-        writeFile(file: "output.csv", text: csvContent.toString())
-        echo "CSV file created successfully: output.csv"
-
-    } catch (Exception e) {
-        echo "Error converting JSON to CSV: ${e.message}"
-    }
-}
-
-// Function to load JSON file (Jenkins-safe)
+// Function to load JSON file
 def loadJsonFile(filePath) {
     try {
-        def jsonText = readFile(filePath)  // Jenkins-safe file read
-        return new JsonSlurper().parseText(jsonText)
+        return new JsonSlurper().parse(new File(filePath))
     } catch (Exception e) {
-        echo "Error reading JSON file: ${e.message}"
+        println "❌ Error reading JSON file: ${e.message}"
         return null
     }
 }
 
-// Jenkins Pipeline-friendly execution
-node {
-    stage('Convert JSON to CSV') {
-        def jsonFilePath = "dev-HK_license.json"  // JSON file location
-        def jsonData = loadJsonFile(jsonFilePath)
-
-        if (jsonData == null) {
-            echo "JSON file loading failed."
-            return
-        }
-
-        echo "Successfully loaded JSON file: ${jsonFilePath}"
-
-        // Convert JSON to CSV
-        convertJsonToCsv(jsonData)
+// Function to extract and print values
+def extractAndPrintValues(jsonData) {
+    if (jsonData) {
+        def rbacUsers = jsonData.rbac_users
+        def workspacesCount = jsonData.workspaces_count
+        println "rbac_users: ${rbacUsers}, workspaces_count: ${workspacesCount}"
+    } else {
+        println "❌ JSON data is null or incorrect format"
     }
 }
+
+// 📂 Set the file path (replace with actual path if needed)
+def jsonFilePath = "/mnt/data/file-48NCNMp7sNk2mwV2x29DxY"
+
+// 🔍 Load JSON and extract values
+def jsonData = loadJsonFile(jsonFilePath)
+extractAndPrintValues(jsonData)
