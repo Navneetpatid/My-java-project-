@@ -1,47 +1,48 @@
 import groovy.json.JsonSlurper
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 def convertJsonToCsv(jsonData, filePath) {
     try {
         if (jsonData) {
-            // Extract environment name from file path
+            println "Processing JSON file: ${filePath}"
+
+            // Extract environment name
             def environment = new File(filePath).getName().replace(".json", "")
 
-            // Extract values
-            def servicesCount = jsonData.services_count
-            def rbacUsers = jsonData.rbac_users
-            def kongVersion = jsonData.kong_version
-            def dbVersion = jsonData.db_version
-            def uname = jsonData.system_info.uname
-            def hostname = jsonData.system_info.hostname
-            def cores = jsonData.system_info.cores
-            def workspacesCount = jsonData.workspaces_count
-            def licenseKey = jsonData.license_key
+            // Extract values safely
+            def servicesCount = jsonData.services_count ?: 0
+            def rbacUsers = jsonData.rbac_users?.toString()?.replace(",", ";") ?: "N/A"
+            def kongVersion = jsonData.kong_version ?: "Unknown"
+            def dbVersion = jsonData.db_version ?: "Unknown"
+            def uname = jsonData.system_info?.uname ?: "Unknown"
+            def hostname = jsonData.system_info?.hostname ?: "Unknown"
+            def cores = jsonData.system_info?.cores ?: 0
+            def workspacesCount = jsonData.workspaces_count ?: 0
+            def licenseKey = jsonData.license_key ?: "N/A"
 
             def csvFile = "output.csv"
-            def fileExists = new File(csvFile).exists()
+            def file = new File(csvFile)
+            def fileExists = file.exists()
 
             def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version", "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
             def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion, uname, hostname, cores, workspacesCount, licenseKey]
 
-            def output = new StringBuilder()
-
-            if (!fileExists) {
-                output.append(headers.join(",") + "\n")
+            // Open file safely
+            file.withWriterAppend { writer ->
+                if (!fileExists) {
+                    writer.writeLine(headers.join(","))
+                }
+                writer.writeLine(values.join(","))
             }
 
-            output.append(values.join(",") + "\n")
-
-            // Write to CSV file
-            Files.write(Paths.get(csvFile), output.toString().getBytes(), fileExists ? StandardOpenOption.APPEND : StandardOpenOption.CREATE)
-
-            println "CSV data saved to: ${csvFile}"
+            println "CSV data saved successfully!"
         } else {
             println "Error: JSON data is null or incorrect format"
         }
     } catch (Exception e) {
-        println "Error processing JSON: ${e.message}"
+        println "Error processing JSON file '${filePath}': ${e.message}"
     }
 }
 
@@ -64,10 +65,13 @@ def loadJsonFile(filePath) {
     try {
         def file = new File(filePath)
         if (file.exists()) {
+            println "Loading JSON file: ${filePath}"
             return new JsonSlurper().parse(file)
+        } else {
+            println "File not found: ${filePath}"
         }
     } catch (Exception e) {
-        println "Error reading JSON file ${filePath}: ${e.message}"
+        println "Error reading JSON file '${filePath}': ${e.message}"
     }
     return null
 }
