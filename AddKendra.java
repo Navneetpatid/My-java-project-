@@ -1,6 +1,13 @@
-import java.nio.file.Files
-import java.nio.file.Paths
+stage('Notification') {
+    steps {
+        script {
+            def csvFilePath = "output.csv"  // Ensure this matches your generated CSV filename
 
-def csvFilePath = "output.csv"  // CSV file name
-Files.write(Paths.get(csvFilePath), myFinalOutput.getBytes("UTF-8"))
-println "CSV file saved as: ${csvFilePath}"
+            emailext subject: "CSV Report Notification",
+                     body: "Hello,\n\nThe CSV report has been generated. Please find the attachment.\n\nBest regards.",
+                     to: "recipient@example.com",
+                     attachFiles: csvFilePath,
+                     mimeType: 'text/csv'
+        }
+    }
+}
