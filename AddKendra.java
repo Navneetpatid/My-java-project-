@@ -1,20 +1,39 @@
-import java.nio.file.*
+import java.nio.file.Files
+import java.nio.file.Paths
 
-String filename = "mycsv.csv"
-String filePath = "./Report/${filename}"
+def processJson() {
+    jsonFilePaths.each { filePath ->
+        println "Processing JSON file: ${filePath}"
 
-if (Files.exists(Paths.get(filePath))) {
-    println "File exists: ${filePath}"
-    
-    // Send Email
-    emailext(
-        to: "navneet.patidar@noexternalmail.hsbc.com",
-        subject: "License Report",
-        attachmentsPattern: filePath,
-        body: "Please find the attached report.",
-        mimeType: "text/html"
-    )
-    println "Email sent successfully."
-} else {
-    println "File not found: ${filePath}. Email not sent."
+        // Define CSV filename and path
+        String filename = "mycsv.csv"
+        String filePath = "./" + filename  // Adjust path as needed
+
+        // Check if `myFinalOutput` has valid content
+        if (myFinalOutput?.trim()) {
+            // Write the CSV file
+            new File(filePath).text = myFinalOutput
+            println "CSV file written successfully: ${filePath}"
+        } else {
+            println "Error: myFinalOutput is empty or null!"
+            return
         }
+    }
+
+    // Verify if file exists before sending email
+    String csvFilePath = "./mycsv.csv"
+    if (Files.exists(Paths.get(csvFilePath))) {
+        println "File exists: ${csvFilePath}"
+
+        // Send Email
+        emailExt(
+            to: "navneet.patidar@noexternalmail.hsbc.com",
+            subject: "License Report",
+            attachmentsPattern: csvFilePath,
+            body: "Please find the attached report.",
+            mimeType: "text/html"
+        )
+    } else {
+        println "Error: File not found at ${csvFilePath}"
+    }
+}
