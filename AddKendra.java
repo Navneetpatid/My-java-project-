@@ -22,14 +22,16 @@ def convertJsonToCsv(jsonData, filePath) {
             def workspacesCount = jsonData.workspaces_count ?: 0
             def licenseKey = jsonData.license_key ?: "N/A"
 
-            def csvFile = "output.csv"
+            // Get parent directory of the JSON file (resources folder)
+            def parentDir = new File(filePath).parent
+            def csvFile = "${parentDir}/output.csv"
             def file = new File(csvFile)
             def fileExists = file.exists()
 
             def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version", "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
             def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion, uname, hostname, cores, workspacesCount, licenseKey]
 
-            // Open file safely
+            // Append data to CSV file safely
             file.withWriterAppend { writer ->
                 if (!fileExists) {
                     writer.writeLine(headers.join(","))
@@ -37,7 +39,7 @@ def convertJsonToCsv(jsonData, filePath) {
                 writer.writeLine(values.join(","))
             }
 
-            println "CSV data saved successfully!"
+            println "CSV data saved successfully at: ${csvFile}"
         } else {
             println "Error: JSON data is null or incorrect format"
         }
@@ -48,7 +50,8 @@ def convertJsonToCsv(jsonData, filePath) {
 
 // Function to process multiple JSON files
 def processJson() {
-    def jsonFilePaths = ["dev-HK_license.json", "dev-UK_license.json", "ppd-HK_license.json", "ppd-UK_license.json"]
+    def resourceDir = "resources" // Change this to your actual path if needed
+    def jsonFilePaths = new File(resourceDir).listFiles()?.findAll { it.name.endsWith(".json") }?.collect { it.path } ?: []
 
     jsonFilePaths.each { filePath ->
         def jsonData = loadJsonFile(filePath)
