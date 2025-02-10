@@ -1,57 +1,76 @@
-import hudson.FilePath
+import groovy.json.JsonSlurper
+import java.nio.file.Files
+import java.nio.file.Paths
 
 def convertJsonToCsv(jsonData, filePath) {
     try {
         if (jsonData) {
-            def environment = filePath.tokenize('/').last().replace(".json", "")
+            // Extract environment name from file path
+            def environment = new File(filePath).getName().replace(".json", "")
 
             // Extract values
-            def servicesCount = jsonData.services_count ?: "N/A"
-            def rbacUsers = jsonData.rbac_users ?: "N/A"
-            def kongVersion = jsonData.kong_version ?: "N/A"
-            def dbVersion = jsonData.db_version ?: "N/A"
-            def uname = jsonData.system_info?.uname ?: "N/A"
-            def hostname = jsonData.system_info?.hostname ?: "N/A"
-            def cores = jsonData.system_info?.cores ?: "N/A"
-            def workspacesCount = jsonData.workspaces_count ?: "N/A"
-            def licenseKey = jsonData.license_key ?: "N/A"
+            def servicesCount = jsonData.services_count
+            def rbacUsers = jsonData.rbac_users
+            def kongVersion = jsonData.kong_version
+            def dbVersion = jsonData.db_version
+            def uname = jsonData.system_info.uname
+            def hostname = jsonData.system_info.hostname
+            def cores = jsonData.system_info.cores
+            def workspacesCount = jsonData.workspaces_count
+            def licenseKey = jsonData.license_key
 
-            // CSV Headers & Values
-            def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version",
-                           "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
-            def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion, uname, hostname,
-                          cores, workspacesCount, licenseKey]
+            def csvFile = "output.csv"
+            def fileExists = new File(csvFile).exists()
 
-            def csvContent = headers.join(",") + "\n" + values.join(",") + "\n"
+            def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version", "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
+            def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion, uname, hostname, cores, workspacesCount, licenseKey]
 
-            // **Write CSV Using Jenkins Workspace API**
-            def csvFilePath = filePath.replace(".json", ".csv")
-            def workspace = new FilePath(new File(csvFilePath))
-            workspace.write(csvContent, "UTF-8")
+            def output = new StringBuilder()
 
-            println "CSV file saved as: ${csvFilePath}"
+            if (!fileExists) {
+                output.append(headers.join(",") + "\n")
+            }
 
-            // **Send Status Notification**
-            sendStatusNotification("SUCCESS", "CSV file generated successfully: ${csvFilePath}", csvFilePath)
+            output.append(values.join(",") + "\n")
+
+            // Write to CSV file
+            Files.write(Paths.get(csvFile), output.toString().getBytes(), fileExists ? StandardOpenOption.APPEND : StandardOpenOption.CREATE)
+
+            println "CSV data saved to: ${csvFile}"
+        } else {
+            println "Error: JSON data is null or incorrect format"
         }
     } catch (Exception e) {
         println "Error processing JSON: ${e.message}"
-        sendStatusNotification("FAILED", "Error processing JSON: ${e.message}", null)
     }
 }
 
-// **Email Notification with Attachment**
-def sendStatusNotification(String status, String message, String attachmentPath) {
-    println "[STATUS: ${status}] - ${message}"
+// Function to process multiple JSON files
+def processJson() {
+    def jsonFilePaths = ["dev-HK_license.json", "dev-UK_license.json", "ppd-HK_license.json", "ppd-UK_license.json"]
 
-    if (status == "SUCCESS") {
-        emailext subject: "CSV Generation Successful",
-                 body: "CSV file generated successfully.\n\n${message}",
-                 to: "recipient@example.com",
-                 attachmentsPattern: attachmentPath ? attachmentPath : ""
-    } else {
-        emailext subject: "CSV Generation Failed",
-                 body: "An error occurred while processing JSON.\n\n${message}",
-                 to: "recipient@example.com"
+    jsonFilePaths.each { filePath ->
+        def jsonData = loadJsonFile(filePath)
+        if (jsonData != null) {
+            convertJsonToCsv(jsonData, filePath)
+        } else {
+            println "JSON file loading failed for: ${filePath}"
+        }
     }
-                }
+}
+
+// Function to load JSON file
+def loadJsonFile(filePath) {
+    try {
+        def file = new File(filePath)
+        if (file.exists()) {
+            return new JsonSlurper().parse(file)
+        }
+    } catch (Exception e) {
+        println "Error reading JSON file ${filePath}: ${e.message}"
+    }
+    return null
+}
+
+// Run the process
+processJson()
