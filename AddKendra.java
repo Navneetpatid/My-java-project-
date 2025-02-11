@@ -1,39 +1,26 @@
-import java.nio.file.Files
-import java.nio.file.Paths
-
 def processJson() {
-    jsonFilePaths.each { filePath ->
-        println "Processing JSON file: ${filePath}"
+    String filename = "mycsv.csv"
+    String directory = "./output"  // Change this to a valid writable directory
+    File dir = new File(directory)
 
-        // Define CSV filename and path
-        String filename = "mycsv.csv"
-        String filePath = "./" + filename  // Adjust path as needed
-
-        // Check if `myFinalOutput` has valid content
-        if (myFinalOutput?.trim()) {
-            // Write the CSV file
-            new File(filePath).text = myFinalOutput
-            println "CSV file written successfully: ${filePath}"
-        } else {
-            println "Error: myFinalOutput is empty or null!"
-            return
-        }
+    if (!dir.exists()) {
+        dir.mkdirs()  // Create directory if it doesn't exist
     }
 
-    // Verify if file exists before sending email
-    String csvFilePath = "./mycsv.csv"
-    if (Files.exists(Paths.get(csvFilePath))) {
-        println "File exists: ${csvFilePath}"
+    String filePath = directory + "/" + filename  // Construct full path
+    println "File path: ${filePath}"
 
-        // Send Email
-        emailExt(
-            to: "navneet.patidar@noexternalmail.hsbc.com",
-            subject: "License Report",
-            attachmentsPattern: csvFilePath,
-            body: "Please find the attached report.",
-            mimeType: "text/html"
-        )
+    if (myFinalOutput?.trim()) {  // Ensure myFinalOutput is not null or empty
+        println "debug23"
+        try {
+            File file = new File(filePath)
+            file.text = myFinalOutput  // Writing the file
+            println "debug24"
+            println "CSV file written successfully: ${filePath}"
+        } catch (Exception e) {
+            println "Error writing CSV file: ${e.message}"
+        }
     } else {
-        println "Error: File not found at ${csvFilePath}"
+        println "Error: myFinalOutput is empty or null!"
     }
 }
