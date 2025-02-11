@@ -1,34 +1,20 @@
-import java.nio.file.*
-
-println "Read file executed successfully"
-
-String filename = "mycsv.csv"
-Path filePath = Paths.get(System.getProperty("user.dir"), filename) // Creates file in current working directory
-
 if (myFinalOutput?.trim()) {  // Ensure myFinalOutput is not null or empty
     try {
-        Files.write(filePath, myFinalOutput.getBytes()) // Write content to file
-        println "CSV file written successfully: ${filePath}"
+        println "Attempting to write to file: mycsvfile.csv"
+        writeFile file: 'mycsvfile.csv', text: myFinalOutput  // Writing the file
+        println "CSV file written successfully: mycsvfile.csv"
 
-        // Verify if the file exists before sending email
-        if (Files.exists(filePath)) {
-            println "File exists: ${filePath}"
-
-            // Send Email
-            emailExt(
-                to: "navneet.patidar@noexternalmail.hsbc.com",
-                subject: "License Report",
-                attachmentsPattern: filePath.toString(),
-                body: "Please find the attached report.",
-                mimeType: "text/html"
-            )
-            println "Email sent successfully with attachment: ${filePath}"
+        // Verify if the file exists before sending an email
+        def filePath = new File("mycsvfile.csv")
+        if (filePath.exists()) {
+            println "File exists: ${filePath.absolutePath}"
         } else {
-            println "Error: File not found!"
+            println "Error: File was not created successfully."
         }
     } catch (Exception e) {
-        println "Error writing CSV file: ${e.message}"
+        println "Error writing file: ${e.message}"
+        e.printStackTrace()
     }
 } else {
-    println "Error: myFinalOutput is empty or null!"
-                }
+    println "Skipping file write: myFinalOutput is null or empty."
+            }
