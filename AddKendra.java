@@ -11,12 +11,14 @@ public class PostRequestExample {
             URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
+            // **Fix: Set DoOutput before writing data**
+            conn.setDoOutput(true);
+
             // Setting request method and headers
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("Authorization", "Basic g+Ojx5b3VyIHNlcnZpZUgYWJzd29yZD4=");
+            conn.setRequestProperty("Authorization", "Basic g+Ojx5b3VyIHNlcnZpY2U6cGFzc3dvcmQ=");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("X-Custom", "<your businessUnit>|<your businessAppId>");
-            conn.setDoOutput(true);
 
             // JSON payload
             String jsonInputString = "{"
@@ -44,7 +46,7 @@ public class PostRequestExample {
                     + "\"u_nature_of_change\": \"20\""
                     + "}";
 
-            // Sending request
+            // **Fix: Write data after setting doOutput(true)**
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
