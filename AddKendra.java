@@ -1,47 +1,40 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+import java.nio.file.*;
+import java.io.IOException;
 
 public class PostRequestExample {
     public static void main(String[] args) {
+        String url = "https://your-api-endpoint.com"; // Replace with actual API URL
+        String jsonPayload = readJsonFromFile("data.json"); // File containing JSON
+
+        if (jsonPayload != null) {
+            sendPostRequest(url, jsonPayload);
+        }
+    }
+
+    public static String readJsonFromFile(String filePath) {
         try {
-            // API URL
-            String urlString = "https://itid-fwk-api-kong-test.ikp301x.cloud.hk.hsbc/cto-ea-sn-change/api/v1/hsbcc/itsm/change";
-            URL url = new URL(urlString);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            return new String(Files.readAllBytes(Paths.get(filePath)));
+        } catch (IOException e) {
+            System.err.println("Error reading JSON file: " + e.getMessage());
+            return null;
+        }
+    }
 
-            // Setting request method and headers
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Authorization", "Basic g+Ojx5b3VyIHN1cnZpY2UgYWNjb29yd29yZD4=");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("X-Custom", "<your businessUnit>|<your businessAppId>");
+    public static void sendPostRequest(String url, String jsonPayload) {
+        RestTemplate restTemplate = new RestTemplate();
 
-            // Get response code
-            int responseCode = conn.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // Read response if successful
-            if (responseCode >= 200 && responseCode < 300) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                String inputLine;
-                StringBuilder response = new StringBuilder();
+        HttpEntity<String> request = new HttpEntity<>(jsonPayload, headers);
 
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
-
-                // Print the response
-                System.out.println("Response: " + response.toString());
-            } else {
-                System.out.println("Failed to connect. Response Code: " + responseCode);
-            }
-
-            // Close connection
-            conn.disconnect();
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            System.out.println("Response: " + response.getBody());
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error making POST request: " + e.getMessage());
         }
     }
 }
