@@ -106,19 +106,60 @@ def call(Map config) {
                         if (WorkSpacesList[i].contains("-")) {
                             try {
                                 counterworkspace = counterworkspace + 1;
-                                echo("Writing for workspace " + WorkSpacesList[i] + " ${i} counterworkspace ${counterworkspace}")
+                                echo("Writing for workspace " + WorkSpacesList[i] + " ${i} counterworkspace ${counterworkspace}total workspace "+workSpacesList.size())
 
                                 def servicecount = this.getworkspaceservices(CP, "${WorkSpacesList[i]}")
                                 
-                                /*if (servicecount > 0) {
-                                    def routescout = this.getRoutes(CP, "${WorkSpacesList[i]}")
-                                    def plugincount = this.getPlugins(CP, "${WorkSpacesList[i]}")
-                                    contentFile = contentFile + WorkSpacesList[i] + "," + routescout + "," + servicecount + "\n"
-                                }*/
-                            } catch (Exception e) {
-                                logger.error("Error processing workspace ${WorkSpacesList[i]}: " + e.getMessage())
-                            }
+                            contentFile = contentFile + WorkSpacesList[i] + "," + servicecount + "," + "CP" + "\n";
+
+} catch (Exception e) {
+    error("Error while fetching gcloud output response: " + e.getMessage());                 
+        }
+        
                         }
                     }
+                    }else{
+if (contentFile == "") {
+    contentFile = "Workspace Name,Service Count,Service Name, CP\n";
+}
+
+logger.info("********** tempworkspacename started ********** - ${CP}");
+echo "get licence info";
+getCPLicenceinfo("${CP}", "${j}");
                     }
-                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e){
+                        error ("error while fetching gcloud output response+e massage ())
+                            }
+                    String filename = "Report_Detail.csv"
+
+echo "filename for creating writing 1: ${filename}"
+echo "filename for contentFile: ${contentFile}"
+
+writeFile file: "./Report/${filename}", text: "${contentFile}"
+echo "writeFile executed successfully - send mail list ${email_reciver}"
+
+String responseBody = readFile encoding: 'UTF-8', file: "./Report/${filename}"
+echo "responseBody: ${responseBody}"
+echo "readFile executed successfully"
+
+String tempworkspacename1 = "${workspace_name}"
+tempworkspacename1 = tempworkspacename1.replace("-DEV", "")
+
+echo "Sending Email to Recipients Report/${filename}"
+
+String message = "Hi Team,\n\nThis is an auto-generated mail for ${tempworkspacename1}.\n"
+message += "Please find the attached report for Workspace, Services, Routes, and Plugins.\n"
+message += "For any queries, please reach out to the team.\n"
+message += "\n\nThanks\n"
+
+emailext to: "${email_reciver}",
+    subject: "Admin API Pipeline Report - ${tempworkspacename1}",
+    attachLog: false,
+    attachmentsPattern: "Report/${filename}",
+    body: message,
+    }
+            }
+        }
