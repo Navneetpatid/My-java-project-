@@ -81,12 +81,44 @@ def call(Map config) {
                                 DP_CTO = configGKEYML.DP_cto
                                 DP_ET = configGKEYML.DP_et
                                 DP_GDT = configGKEYML.DP_gdt
+                            
+                    def dplist1 = ["${DP_SHARED}", "${DP_CTO}", "${DP_ET}", "${DP_GDT}"]
+
+                if (counter < 5000) {
+                    logger.info("********** igetworkspaces started main ************** - ${CP}")
+                    counter = counter + 1;
+
+                    def errList = [];
+                    logger.info("********** testAuth Calling ************** ${counter}")
+                    this.testAuth(CP)
+
+                    // logger.info("********** getworkspaces ended ************** ${CP}")
+                    
+                    if (workspace_name == "ALL") {
+                    if (contentFile == "")
+                        contentFile = "Workspace Name, Service Count, CP\n"
+
+                    logger.info("********** igetworkspaces started ************** - ${CP}")
+                    WorkSpacesList.clear();
+                    getworkspaces(CP)
+
+                    for (i = 0; i < WorkSpacesList.size(); i++) {
+                        if (WorkSpacesList[i].contains("-")) {
+                            try {
+                                counterworkspace = counterworkspace + 1;
+                                echo("Writing for workspace " + WorkSpacesList[i] + " ${i} counterworkspace ${counterworkspace}")
+
+                                def servicecount = this.getworkspaceservices(CP, "${WorkSpacesList[i]}")
+                                
+                                /*if (servicecount > 0) {
+                                    def routescout = this.getRoutes(CP, "${WorkSpacesList[i]}")
+                                    def plugincount = this.getPlugins(CP, "${WorkSpacesList[i]}")
+                                    contentFile = contentFile + WorkSpacesList[i] + "," + routescout + "," + servicecount + "\n"
+                                }*/
+                            } catch (Exception e) {
+                                logger.error("Error processing workspace ${WorkSpacesList[i]}: " + e.getMessage())
                             }
                         }
-                    } catch (Exception e) {
-                        error("Error in Report Generation Process: " + e.getMessage())
                     }
-                }
-        }
-    }
+                    }
                     }
