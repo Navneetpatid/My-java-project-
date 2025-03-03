@@ -1,205 +1,219 @@
-package com.janaushadhi.adminservice.repository;
+import groovy.json.JsonSlurper
 
-import com.janaushadhi.adminservice.entity.AddKendra;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+def call(Map config) {
+    this.config = config
+    node(gcrNode) {
+        logger = new Logger()
+        echo "Pipeline execution starts"
 
-import java.util.List;
-import java.util.Optional;
+        miEvent = new MiEvent()
+        splunkRequestBody = new SplunkRequestBody()
 
-@Repository
-public interface AddKendraRepository extends JpaRepository<AddKendra,Long> {
-    Optional<AddKendra> findByStoreCode(String storeCode);
+        stage('Checkout') {
+            try {
+                cleanWs()
+                gitCheckout()
 
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE " +
-            "(LOWER(bg.contact_person) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.state_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.district_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.kendra_address) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.store_code) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.pin_code) LIKE LOWER(concat('%', :searchText, '%'))) " +
-            "AND bg.status != 2",
-            nativeQuery = true)
-    List<AddKendra> findAllBySearchText(@Param("searchText") String searchText);
+                sh '''
+                    touch email_data.txt
+                    ls
+                    echo "DATE ENVIRONMENT CP DATAPLANE STATUS" >> email_data.txt
+                '''
 
-    @Query(value = "SELECT * FROM admin_add_kendra t " +
-            "WHERE t.status != 2 " +
-            "ORDER BY " +
-            "CASE :columnName " +
-            "  WHEN 'id' THEN t.id " +
-            "  WHEN 'contact_person' THEN t.contact_person " +
-            "  WHEN 'state_id' THEN t.state_id " +
-            "  WHEN 'district_id' THEN t.district_id " +
-            "  WHEN 'kendra_address' THEN t.kendra_address " +
-            "  WHEN 'store_code' THEN t.store_code " +
-            "  WHEN 'pin_code' THEN t.pin_code " +
-            "END ASC", nativeQuery = true)
-    List<AddKendra> searchAndOrderByASC(@Param("columnName") String columnName);
+                def date = new Date()
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy")
+                rundate = sdf.format(date)
+                echo "Run Date: ${rundate}"
 
+                miEvent.Environment = "ENVIRONMENT"
+                miEvent.CP = "CP"
+                miEvent.Status = "STATUS"
+                miEvent.Dataplane = "DATAPLANE"
+                miEvent.Date = "DATE"
 
+                splunkRequestBody.event = miEvent
+                splunkRequestBody.sourcetype = sourceType
 
-    @Query(value = "SELECT * FROM admin_add_kendra t " +
-            "WHERE t.status != 2 " +
-            "ORDER BY " +
-            "CASE :columnName " +
-            "  WHEN 'id' THEN t.id " +
-            "  WHEN 'contact_person' THEN t.contact_person " +
-            "  WHEN 'state_id' THEN t.state_id " +
-            "  WHEN 'district_id' THEN t.district_id " +
-            "  WHEN 'kendra_address' THEN t.kendra_address " +
-            "  WHEN 'store_code' THEN t.store_code " +
-            "  WHEN 'pin_code' THEN t.pin_code " +
-            "END DESC", nativeQuery = true)
-    List<AddKendra> searchAndOrderByDESC(@Param("columnName") String columnName);
+                def environmentList = "dev-HK,dev-UK,ppd-HK,ppd-UK,prd-HK,prd-UK".split(',') as List
 
+                buildno = env.BUILD_NUMBER
+                echo "Build Number: ${buildno}"
 
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE " +
-            " (LOWER(bg.contact_person) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.state_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.district_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.kendra_address) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.store_code) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.pin_code) LIKE LOWER(concat('%', :searchText, '%'))) " +
-            " AND bg.status != 2 " +
-            " ORDER BY " +
-            " CASE :columnName " +
-            "   WHEN 'id' THEN bg.id " +
-            "   WHEN 'contact_person' THEN bg.contact_person " +
-            "   WHEN 'state_id' THEN bg.state_id " +
-            "   WHEN 'district_id' THEN bg.district_id " +
-            "   WHEN 'kendra_address' THEN bg.kendra_address " +
-            "   WHEN 'store_code' THEN bg.store_code " +
-            "   WHEN 'pin_code' THEN bg.pin_code " +
-            " END ASC", nativeQuery = true)
-    List<AddKendra> findASC(@Param("searchText") String searchText, @Param("columnName") String columnName);
+                stage("Report Generation Process") {
+                    try {
+                        def counter = 0
+                        def counterWorkspace = 0
+                        echo "Processing workspace: ${workspace_name}"
 
+                        for (def envType in environmentList) {
+                            String DataPlanename = "GKE-GCP"
+                            def configDetailsGKEYaml = readYaml text: libraryResource("GKE.yaml")
 
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE " +
-            " (LOWER(bg.contact_person) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.state_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.district_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.kendra_address) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.store_code) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.pin_code) LIKE LOWER(concat('%', :searchText, '%'))) " +
-            " AND bg.status != 2 " +
-            " ORDER BY " +
-            " CASE :columnName " +
-            "   WHEN 'id' THEN bg.id " +
-            "   WHEN 'contact_person' THEN bg.contact_person " +
-            "   WHEN 'state_id' THEN bg.state_id " +
-            "   WHEN 'district_id' THEN bg.district_id " +
-            "   WHEN 'kendra_address' THEN bg.kendra_address " +
-            "   WHEN 'store_code' THEN bg.store_code " +
-            "   WHEN 'pin_code' THEN bg.pin_code " +
-            " END DESC", nativeQuery = true)
-    List<AddKendra> findDESC(@Param("searchText") String searchText, @Param("columnName") String columnName);
+                            def config_detail_GKE = libraryResource '../resources/GKE.yaml'
+                            writeFile file: 'GKE.yaml', text: config_detail_GKE
+                            def configurationGKEYML = readYaml file: "resources/GKE.yaml"
 
+                            ENV_TYPE = envType.trim()
+                            echo "Processing Environment: ${ENV_TYPE}"
 
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE " +
-            "(LOWER(bg.contact_person) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.state_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.district_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.kendra_address) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.store_code) LIKE LOWER(concat('%', :searchText, '%')) " +
-            "OR LOWER(bg.pin_code) LIKE LOWER(concat('%', :searchText, '%'))) " +
-            "AND bg.status != 2",
-            nativeQuery = true)
-    Page<AddKendra> findAllByUserName(@Param("searchText") String searchText, Pageable pageable);
+                            def configGKEYML = configurationGKEYML."${ENV_TYPE}"
+                            configGKEYMLAll = configGKEYML
 
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE " +
-            " (LOWER(bg.contact_person) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.state_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.district_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.kendra_address) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.store_code) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.pin_code) LIKE LOWER(concat('%', :searchText, '%'))) " +
-            " AND bg.status != 2 " +
-            " ORDER BY " +
-            " CASE :columnName " +
-            "   WHEN 'id' THEN bg.id " +
-            "   WHEN 'contact_person' THEN bg.contact_person " +
-            "   WHEN 'state_id' THEN bg.state_id " +
-            "   WHEN 'district_id' THEN bg.district_id " +
-            "   WHEN 'kendra_address' THEN bg.kendra_address " +
-            "   WHEN 'store_code' THEN bg.store_code " +
-            "   WHEN 'pin_code' THEN bg.pin_code " +
-            " END ASC", nativeQuery = true)
-    Page<AddKendra> findASC( @Param("searchText") String searchText,@Param("columnName") String columnName, Pageable pageable);
-    @Query(value = "SELECT * FROM admin_add_kendra t " +
-            "WHERE t.status != 2 " +
-            "ORDER BY " +
-            "CASE WHEN :columnName = 'id' THEN t.id END DESC," +
-            "CASE WHEN :columnName = 'contact_person' THEN t.contact_person END DESC," +
-            "CASE WHEN :columnName = 'state_id' THEN t.state_id END DESC," +
-            "CASE WHEN :columnName = 'district_id' THEN t.district_id END DESC," +
-            "CASE WHEN :columnName = 'kendra_address' THEN t.kendra_address END DESC," +
-            "CASE WHEN :columnName = 'store_code' THEN t.store_code END DESC," +
-            "CASE WHEN :columnName = 'pin_code' THEN t.pin_code END DESC ", nativeQuery = true)
-    Page<AddKendra> searchAndOrderByDESC(@Param("columnName") String columnName, Pageable pageable);
-    @Query(value = "SELECT * FROM admin_add_kendra t " +
-            "WHERE t.status != 2 " +
-            "ORDER BY " +
-            "CASE WHEN :columnName = 'id' THEN t.id END ASC," +
-            "CASE WHEN :columnName = 'contact_person' THEN t.contact_person END ASC," +
-            "CASE WHEN :columnName = 'state_id' THEN t.state_id END ASC," +
-            "CASE WHEN :columnName = 'district_id' THEN t.district_id END ASC," +
-            "CASE WHEN :columnName = 'kendra_address' THEN t.kendra_address END ASC," +
-            "CASE WHEN :columnName = 'store_code' THEN t.store_code END ASC," +
-            "CASE WHEN :columnName = 'pin_code' THEN t.pin_code END ASC", nativeQuery = true)
-    Page<AddKendra> searchAndOrderByASC(@Param("columnName") String columnName, Pageable pageable);
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE " +
-            " (LOWER(bg.contact_person) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.state_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.district_id) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.kendra_address) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.store_code) LIKE LOWER(concat('%', :searchText, '%')) " +
-            " OR LOWER(bg.pin_code) LIKE LOWER(concat('%', :searchText, '%'))) " +
-            " AND bg.status != 2 " +
-            " ORDER BY " +
-            " CASE :columnName " +
-            "   WHEN 'id' THEN bg.id " +
-            "   WHEN 'contact_person' THEN bg.contact_person " +
-            "   WHEN 'state_id' THEN bg.state_id " +
-            "   WHEN 'district_id' THEN bg.district_id " +
-            "   WHEN 'kendra_address' THEN bg.kendra_address " +
-            "   WHEN 'store_code' THEN bg.store_code " +
-            "   WHEN 'pin_code' THEN bg.pin_code " +
-            " END DESC", nativeQuery = true)
-    Page<AddKendra> findDESC(@Param("searchText") String searchText, @Param("columnName") String columnName, Pageable pageable);
+                            echo "Configuration Details: ${configurationGKEYML}"
+                            echo "Parsed Config: ${configGKEYML}"
+                            echo "All Configs: ${configGKEYMLAll}"
 
+                            def CP = configGKEYML.CP
+                            def DP_SHARED = configGKEYML.DP_Shared
 
-    Page<AddKendra> findAllByStateIdAndDistrictId(Long stateId, Long districtId, Pageable pageable);
-    List<AddKendra> findAllByStateIdAndDistrictId(Long stateId, Long districtId, Sort sort);
-    List<AddKendra> findAllByStateId(Long stateId, Sort sort);
-    Page<AddKendra> findAllByStateId(Long stateId, Pageable pageable);
+                            if (!envType.equals("sbox-HK")) {
+                                def DP_CTO = configGKEYML.DP_cto
+                                def DP_ET = configGKEYML.DP_et
+                                def DP_GDT = configGKEYML.DP_gdt
 
+                                def dplist = [DP_SHARED, DP_CTO, DP_ET, DP_GDT]
 
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE bg.status != 2", nativeQuery = true)
-    Page<AddKendra> findAllWhereStatusNotTwo(Pageable pageable);
+                                if (counter < 5000) {
+                                    logger.info("Processing CP: ${CP}")
+                                    counter++
 
+                                    this.testAuth(CP)
 
-    @Query(value = "SELECT * FROM admin_add_kendra bg WHERE bg.status != 2", nativeQuery = true)
-    List<AddKendra> findAllWhereStatusNotTwo();
+                                    if (workspace_name == "ALL") {
+                                        def contentFile = "Workspace Name, Service Count, CP\n"
 
-    List<AddKendra> findAllByStatus(Short status);
+                                        logger.info("Fetching Workspaces for CP: ${CP}")
+                                        WorkSpacesList.clear()
+                                        getworkspaces(CP)
 
-    Page<AddKendra> findAllByStatus(Short status, Pageable pageable);
+                                        for (workspace in WorkSpacesList) {
+                                            if (workspace.contains("-")) {
+                                                try {
+                                                    counterWorkspace++
+                                                    echo("Processing Workspace: ${workspace}")
 
-    List<AddKendra> findAllByStateIdAndDistrictIdAndPinCode(Long stateId, Long districtId, Long pinCode, Sort sort);
+                                                    def serviceCount = this.getworkspaceservices(CP, workspace)
+                                                    contentFile += "${workspace},${serviceCount},CP\n"
 
+                                                } catch (Exception e) {
+                                                    error("Error fetching workspace services: " + e.getMessage())
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        def contentFile = "Workspace Name, Service Count, Service Name, CP\n"
+                                        logger.info("Fetching License Info for CP: ${CP}")
+                                        getCPLicenceinfo(CP, envType)
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        error("Error during report generation: " + e.getMessage())
+                    }
+                }
 
-    List<AddKendra> findAllByStateIdAndPinCode(Long stateId, Long pinCode, Sort sort);
+                stage("JSON to CSV Conversion") {
+                    processJsonToCsv()
+                }
 
-    Page<AddKendra> findAllByStateIdAndDistrictIdAndPinCode(Long stateId, Long districtId, Long pinCode, Pageable pageable);
+                stage("Send Email Report") {
+                    def filename = "Report_Detail.csv"
+                    echo "Creating Report File: ${filename}"
 
-    Page<AddKendra> findAllByStateIdAndPinCode(Long stateId, Long pinCode, Pageable pageable);
+                    writeFile file: "./Report/${filename}", text: contentFile
+                    echo "Report File Written Successfully"
 
-    Page<AddKendra> findAllByPinCode(Long pinCode, Pageable pageable);
+                    String responseBody = readFile encoding: 'UTF-8', file: "./Report/${filename}"
+                    echo "Response Body Read Successfully"
 
-    List<AddKendra> findAllByPinCode(Long pinCode, Sort sort);
+                    String tempWorkspaceName = workspace_name.replace("-DEV", "")
+                    echo "Sending Email for Report: Report/${filename}"
+
+                    String message = """
+                    Hi Team,
+
+                    This is an auto-generated email for ${tempWorkspaceName}.
+                    Please find the attached report for Workspace, Services, Routes, and Plugins.
+                    For any queries, please reach out to the team.
+
+                    Thanks
+                    """
+
+                    emailext(
+                        to: "${email_reciver}",
+                        subject: "Admin API Pipeline Report - ${tempWorkspaceName}",
+                        attachLog: false,
+                        attachmentsPattern: "Report/${filename}",
+                        body: message
+                    )
+
+                    println "Email sent successfully!"
+                }
+            }
+        }
+    }
 }
+
+// Function to process multiple JSON files and generate CSV files
+def processJsonToCsv() {
+    def jsonFilePaths = [
+        "dev-HK_license.json", "dev-UK_license.json",
+        "ppd-HK_license.json", "ppd-UK_license.json"
+    ]
+
+    jsonFilePaths.each { filePath ->
+        def jsonData = loadJsonFile(filePath)
+        if (jsonData == null) {
+            println "JSON file loading failed for: ${filePath}"
+        } else {
+            println "Successfully loaded JSON file: ${filePath}"
+            convertJsonToCsv(jsonData, filePath)
+        }
+    }
+}
+
+// Function to load a JSON file
+def loadJsonFile(filePath) {
+    try {
+        def fileContent = new File(filePath).text  // Read file content
+        def jsonData = new JsonSlurper().parseText(fileContent)  // Parse JSON
+        return jsonData
+    } catch (Exception e) {
+        println "Error reading JSON file: ${e.message}"
+        return null
+    }
+}
+
+// Function to convert JSON to CSV
+def convertJsonToCsv(jsonData, filePath) {
+    try {
+        if (jsonData) {
+            def environment = new File(filePath).getName().replace(".json", "")
+
+            def servicesCount = jsonData.services_count
+            def rbacUsers = jsonData.rbac_users
+            def kongVersion = jsonData.kong_version
+            def dbVersion = jsonData.db_version
+            def uname = jsonData.system_info.uname
+            def hostname = jsonData.system_info.hostname
+            def cores = jsonData.system_info.cores
+            def workspacesCount = jsonData.workspaces_count
+            def licenseKey = jsonData.containsKey("license") ? jsonData.license.license_key : "N/A"
+
+            def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version",
+                           "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
+            def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion,
+                          uname, hostname, cores, workspacesCount, licenseKey]
+
+            def csvContent = headers.join(",") + "\n" + values.join(",")
+            def csvFilePath = filePath.replace(".json", ".csv")
+            new File(csvFilePath).text = csvContent
+            println "CSV file created successfully: ${csvFilePath}"
+        } else {
+            println "Error: JSON data is null or incorrect format"
+        }
+    } catch (Exception e) {
+        println "Error converting JSON to CSV: ${e.message}"
+    }
+            }
