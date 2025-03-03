@@ -67,19 +67,19 @@ import java.text.SimpleDateFormat
                 buildno = env.BUILD_NUMBER
                 echo "buildno:${buildno}"
                 
-                try {
-                    enlist = "${environment}".split(',') as List
+                
+                    envlist = "${environment}".split(',') as List
                 } catch (Exception e) {
                     error("Error while fetching gcloud output response: " + e.getMessage())
                 }
-                
+        } 
                 stage("Report Generation Process") {
                     try {
                         def counter = 0
                         def counterworkspace = 0
                         echo "pass workspace name ${workspace_name}"
                         
-                        for (def j in enlist) {
+                        for (def j in envlist) {
                             String DataPlanename = "GKE-GCP"
                             def configDetailsGKEYaml = readYaml text: libraryResource("GKE.yaml")
                             
@@ -99,7 +99,7 @@ import java.text.SimpleDateFormat
 
                             CP = configGKEYML.CP
                             DP_SHARED = configGKEYML.DP_Shared
-
+                            
                             if (j.equals("sbox-HK")) {
                                 logger.info("********** if Get getPlugins **************")
                             } else {
