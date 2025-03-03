@@ -57,14 +57,36 @@ def call(Map config) {
                         for (def j in enlist) {
                             String DataPlanename = "GKE-GCP"
                             def configDetailsGKEYaml = readYaml text: libraryResource("GKE.yaml")
+                            
+                            def config_detail_GKE = libraryResource '../resources/GKE.yaml'
+                            writeFile file: 'GKE.yaml', text: config_detail_GKE
+                            def configurationGKEYML = readYaml file: "resources/GKE.yaml"
+
+                            ENV_TYPE = "${j}".trim()
+                            echo "${ENV_TYPE}"
+
+                            def configGKEYML = configurationGKEYML."${ENV_TYPE}"
+                            configGKEYMLAll = configGKEYML
+
+                            echo "printing ${configurationGKEYML}"
+                            echo "Printing configIKPYML: ${configGKEYML}"
+                            echo "Printing configGKEYMLAll: ${configGKEYMLAll}"
+
+                            CP = configGKEYML.CP
+                            DP_SHARED = configGKEYML.DP_Shared
+
+                            if (j.equals("sbox-HK")) {
+                                logger.info("********** if Get getPlugins **************")
+                            } else {
+                                DP_CTO = configGKEYML.DP_cto
+                                DP_ET = configGKEYML.DP_et
+                                DP_GDT = configGKEYML.DP_gdt
+                            }
                         }
                     } catch (Exception e) {
                         error("Error in Report Generation Process: " + e.getMessage())
                     }
                 }
-            } catch (Exception e) {
-                echo "Error during checkout: ${e.getMessage()}"
-            }
         }
     }
                     }
