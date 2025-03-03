@@ -1,4 +1,29 @@
-def call(Map config) {
+import groovy.transform.Field
+import java.io.File
+import groovy.json.JsonSlurper
+import java.text.SimpleDateFormat
+
+// Define global variables with @Field annotation
+@Field String gcrNode = "cm-linux-cjoc"
+@Field def logger
+@Field Boolean jobFailed = false
+@Field String kongDeploymentAccountCredID = "Kong_Deployment_Pipeline_User"
+@Field String KONGSandbox_CREDID = "KONGSandbox"
+@Field String KONGdev = "KONGdev"
+
+// Define lists and maps
+@Field def serviceId
+@Field def routeId
+@Field def buildNo
+@Field String contentFile = ""
+@Field def configKEYMAIL1
+@Field def WorkSpacesList = []
+@Field def pluginList = []
+@Field def serviceroutesList = []
+@Field def servicenameandindexMap = [:]
+@Field def rundate
+@Field String sourceType = "HAP_JENKINS_KONG"
+    def call(Map config) {
     this.config = config
     node(gcrNode) {
         logger = new Logger()
