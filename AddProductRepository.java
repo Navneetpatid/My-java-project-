@@ -1,224 +1,195 @@
-package com.janaushadhi.adminservice.repository;
+import groovy.transform.Field
+import java.io.File
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import java.text.SimpleDateFormat
 
-import com.janaushadhi.adminservice.entity.Newproduct;
-import feign.Param;
-import jakarta.xml.bind.SchemaOutputResolver;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+// Define global variables with @Field annotation
+@Field String gcrNode = "cm-linux-cjoc"
+@Field def logger
+@Field Boolean jobFailed = false
+@Field String kongDeploymentAccountCredID = "Kong_Deployment_Pipeline_User"
+@Field String KONGSandbox_CREDID = "KONGSandbox"
+@Field String KONGdev = "KONGdev"
 
-import java.util.List;
-import java.util.Optional;
+// Define lists and maps
+@Field def serviceId
+@Field def routeId
+@Field def buildNo
+@Field String contentFile = ""
+@Field def configKEYMAIL1
+@Field def WorkSpacesList = []
+@Field def pluginList = []
+@Field def serviceroutesList = []
+@Field def servicenameandindexMap = [:]
+@Field def rundate
+@Field String sourceType = "HAP_JENKINS_KONG"
 
-public interface AddProductRepository extends JpaRepository<Newproduct, Long> {
+def call(Map config) {
+    this.config = config
+    node(gcrNode) {
+        logger = new Logger()
+        echo "sandip starts"
 
+        miEvent = new MiEvent()
+        splunkRequestBody = new SplunkRequestBody()
 
-    Newproduct findByproductId(Long Id);
+        stage('Checkout') {
+            try {
+                cleanWs()
+                gitCheckout()
+                sh '''
+                    >> email_data.txt
+                    ls
+                    echo "DATE ENVIRONMENT CP DATAPLANE STATUS" >> email_data.txt
+                '''
 
-    Optional<Newproduct> findByProductIdAndStatusNot(Long id, short i);
+                def date = new Date()
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy")
+                rundate = sdf.format(date)
+                echo "rundate:${rundate}"
 
-    @Query(value = "SELECT * FROM newproduct WHERE Status !=2 ORDER BY product_id DESC", nativeQuery = true)
-    Page<Newproduct> findAllByPage(Pageable pageable);
+                miEvent.Environment = "ENVIRONMENT"
+                miEvent.CP = "CP"
+                miEvent.Status = "STATUS"
+                miEvent.Dataplane = "DATAPLANE"
+                miEvent.Date = "DATE"
 
-    //-------------------------------Without-Page-----------------------------------
+                splunkRequestBody.event = miEvent
+                splunkRequestBody.sourcetype = sourceType
 
-    @Query(value = "SELECT * FROM newproduct WHERE Status !=2 ORDER BY product_id DESC", nativeQuery = true)
-    List<Newproduct> findAllNewProductroductAndStatusNot();
+                def environment = "dev-HK,dev-UK,ppd-HK,ppd-UK,prd-HK,prd-UK"
+                def DP_CTO, DP_ET, DP_GDT, DP_SHARED, CP
+                buildno = env.BUILD_NUMBER
+                echo "buildno:${buildno}"
 
-    //-------Pending
+                envlist = "${environment}".split(',') as List
+            } catch (Exception e) {
+                error("Error while fetching gcloud output response: " + e.getMessage())
+            }
+        }
 
+        stage("Report Generation Process") {
+            try {
+                def counter = 0
+                def counterworkspace = 0
+                echo "pass workspace name ${workspace_name}"
 
-   // @Query(value = "SELECT * FROM newproduct np WHERE (np.drug_code like concat('%',?1,'%') or np.generic_name like concat('%',?1,'%') or np.group_name like concat('%',?1,'%') or np.mrp like concat('%',?1,'%') or np.unit_size like concat('%',?1,'%')) AND status !=2 ", nativeQuery = true)
-//    @Query(value = "SELECT * FROM newproduct bg WHERE " +
-//            "bg.status != 2 AND (" +
-//            "(LOWER(bg.drug_code) LIKE LOWER(concat('%',:searchText,'%'))) " +
-//            "OR (LOWER(bg.generic_name) LIKE LOWER(concat('%',:searchText,'%'))) "+
-//            "OR (LOWER(bg.group_name) LIKE LOWER(concat('%',:searchText,'%'))) "+
-//            "OR (LOWER(bg.product_id) LIKE LOWER(concat('%',:searchText,'%'))) "+
-//            "OR (LOWER(bg.mrp) LIKE LOWER(concat('%',:searchText,'%'))) "+
-//            "OR (LOWER(bg.unit_size) LIKE LOWER(concat('%',:searchText,'%')))", nativeQuery = true)
-//    List<Newproduct> findProductBySearch(@Param("searchText") String searchText);
-   @Query(value = "SELECT * FROM newproduct bg WHERE " +
-           "bg.status != 2 AND (" +
-           "LOWER(bg.drug_code) = LOWER(:searchText) " +
-           "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-           "OR LOWER(bg.unit_size) = LOWER(:searchText))", nativeQuery = true)
-   List<Newproduct> findProductBySearch(@Param("searchText") String searchText);
+                for (def j in envlist) {
+                    String DataPlanename = "GKE-GCP"
+                    def configDetailsGKEYaml = readYaml text: libraryResource("GKE.yaml")
 
+                    def config_detail_GKE = libraryResource '../resources/GKE.yaml'
+                    writeFile file: 'GKE.yaml', text: config_detail_GKE
+                    def configurationGKEYML = readYaml file: "resources/GKE.yaml"
 
-   // @Query(value = "SELECT * FROM newproduct np WHERE Status !=2 ORDER BY np.product_id ASC,np.drug_code ASC,np.generic_name ASC,np.group_name ASC,np.mrp ASC,np.unit_size ASC", nativeQuery = true)
-   @Query(value = "SELECT * FROM newproduct np WHERE np.status != 2 ORDER BY " +
-           "CASE WHEN :columnName = 'product_id' THEN np.product_id END ASC, " +
-           "CASE WHEN :columnName = 'drug_code' THEN np.drug_code END ASC, " +
-           "CASE WHEN :columnName = 'generic_name' THEN np.generic_name END ASC, " +
-           "CASE WHEN :columnName = 'group_name' THEN np.group_name END ASC, " +
-           "CASE WHEN :columnName = 'mrp' THEN np.mrp END ASC, " +
-           "CASE WHEN :columnName = 'unit_size' THEN np.unit_size END ASC",nativeQuery = true)
-    List<Newproduct> searchAndOrderByASC(@Param("columnName") String columnName);
+                    ENV_TYPE = "${j}".trim()
+                    echo "${ENV_TYPE}"
 
-  //  @Query(value = "SELECT * FROM newproduct np WHERE Status !=2 ORDER BY np.product_id DESC,np.drug_code DESC,np.generic_name DESC,np.group_name DESC,np.mrp DESC,np.unit_size DESC", nativeQuery = true)
-  @Query(value = "SELECT * FROM newproduct np " +
-          "WHERE np.status != 2 " +
-          "ORDER BY " +
-          "CASE WHEN :columnName = 'product_id' THEN np.product_id END DESC, " +
-          "CASE WHEN :columnName = 'drug_code' THEN np.drug_code END DESC, " +
-          "CASE WHEN :columnName = 'generic_name' THEN np.generic_name END DESC, " +
-          "CASE WHEN :columnName = 'group_name' THEN np.group_name END DESC, " +
-          "CASE WHEN :columnName = 'mrp' THEN np.mrp END DESC, " +
-          "CASE WHEN :columnName = 'unit_size' THEN np.unit_size END DESC ", nativeQuery = true )
-    List<Newproduct> searchAndOrderByDESC(@Param("columnName") String columnName);
+                    def configGKEYML = configurationGKEYML."${ENV_TYPE}"
+                    configGKEYMLAll = configGKEYML
 
-   // @Query(value = "SELECT * FROM newproduct np WHERE (np.drug_code like concat('%',?1,'%') or np.generic_name like concat('%',?1,'%') or np.group_name like concat('%',?1,'%') or np.mrp like concat('%',?1,'%') or np.unit_size like concat('%',?1,'%')) AND np.status !=2 ORDER BY np.product_id ASC", nativeQuery = true)
-   @Query(value = "SELECT * FROM newproduct bg WHERE " +
-           "(LOWER(bg.drug_code) = LOWER(:searchText) " +
-           "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-           "OR LOWER(bg.unit_size) = LOWER(:searchText)) " +
-           "AND bg.status != 2 " +
-           " ORDER BY " +
-           " CASE WHEN :columnName = 'drug_code' THEN bg.drug_code END ASC," +
-           " CASE WHEN :columnName = 'generic_name' THEN bg.generic_name END ASC," +
-           " CASE WHEN :columnName = 'group_name' THEN bg.group_name END ASC," +
-           " CASE WHEN :columnName = 'mrp' THEN bg.mrp END ASC," +
-           " CASE WHEN :columnName = 'unit_size' THEN bg.unit_size END ASC", nativeQuery = true)
-    List<Newproduct> findASC(@Param("searchText") String searchText,@Param("columnName") String columnName);
+                    echo "printing ${configurationGKEYML}"
+                    echo "Printing configGKEYML: ${configGKEYML}"
+                    echo "Printing configGKEYMLAll: ${configGKEYMLAll}"
 
-   // @Query(value = "SELECT * FROM newproduct np WHERE (np.drug_code like concat('%',?1,'%') or np.generic_name like concat('%',?1,'%') or np.group_name like concat('%',?1,'%') or np.mrp like concat('%',?1,'%') or np.unit_size like concat('%',?1,'%')) AND np.status !=2 ORDER BY np.product_id DESC ", nativeQuery = true)
-   @Query(value = "SELECT * FROM newproduct bg WHERE " +
-           "(LOWER(bg.drug_code) = LOWER(:searchText) " +
-           "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-           "OR LOWER(bg.unit_size) = LOWER(:searchText)) " +
-           "AND bg.status != 2 " +
-           " ORDER BY " +
-           " CASE WHEN :columnName = 'drug_code' THEN bg.drug_code END DESC," +
-           " CASE WHEN :columnName = 'generic_name' THEN bg.generic_name END DESC," +
-           " CASE WHEN :columnName = 'group_name' THEN bg.group_name END DESC," +
-           " CASE WHEN :columnName = 'mrp' THEN bg.mrp END DESC," +
-           " CASE WHEN :columnName = 'unit_size' THEN bg.unit_size END DESC", nativeQuery = true)
-    List<Newproduct> findDESC(@Param("searchText")String searchText,@Param("columnName") String columnName);
+                    CP = configGKEYML.CP
+                    DP_SHARED = configGKEYML.DP_Shared
 
+                    if (!j.equals("sbox-HK")) {
+                        DP_CTO = configGKEYML.DP_cto
+                        DP_ET = configGKEYML.DP_et
+                        DP_GDT = configGKEYML.DP_gdt
 
-    //-------------------------------page-Request-----------------------------------
-    @Query(value = "SELECT * FROM newproduct WHERE Status !=2 ORDER BY product_id DESC", nativeQuery = true)
-    Page<Newproduct> findAllAndStatu(Pageable pageable);
+                        def dplist1 = ["${DP_SHARED}", "${DP_CTO}", "${DP_ET}", "${DP_GDT}"]
 
-  //  @Query(value = "SELECT * FROM newproduct np WHERE (np.drug_code like concat('%',?1,'%') or np.generic_name like concat('%',?1,'%') or np.group_name like concat('%',?1,'%') or np.mrp like concat('%',?1,'%') or np.unit_size like concat('%',?1,'%')) Status !=2 ORDER BY product_id DESC", nativeQuery = true)
-  @Query(value = "SELECT * FROM newproduct bg WHERE " +
-          "bg.status != 2 AND (" +
-          "LOWER(bg.drug_code) = LOWER(:searchText) " +
-          "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-          "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-          "OR LOWER(bg.product_id) = LOWER(:searchText) " +
-          "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-          "OR LOWER(bg.unit_size) = LOWER(:searchText))", nativeQuery = true)
-  Page<Newproduct> findAllNewProductsAndStatusNot22( @Param("searchText") String searchText, Pageable pageable);
+                        if (counter < 5000) {
+                            logger.info("********** Fetching Workspaces ************** - ${CP}")
+                            counter = counter + 1
 
-//    @Query(value = "SELECT * FROM newproduct bg WHERE " +
-//            "bg.status != 2 AND (" +
-//            "LOWER(bg.drug_code) = LOWER(:searchText) " +
-//            "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-//            "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-//            "OR LOWER(bg.product_id) = LOWER(:searchText) " +
-//            "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-//            "OR LOWER(bg.unit_size) = LOWER(:searchText))",
-//            countQuery = "SELECT count(*) FROM newproduct bg WHERE " +
-//                    "bg.status != 2 AND (" +
-//                    "LOWER(bg.drug_code) = LOWER(:searchText) " +
-//                    "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-//                    "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-//                    "OR LOWER(bg.product_id) = LOWER(:searchText) " +
-//                    "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-//                    "OR LOWER(bg.unit_size) = LOWER(:searchText))",
-//            nativeQuery = true)
-//    Page<Newproduct> findAllNewProductsAndStatusNot22(@Param("searchText") String searchText, Pageable pageable);
+                            logger.info("********** Authenticating ************** ${counter}")
+                            this.testAuth(CP)
 
+                            if (workspace_name == "ALL") {
+                                if (contentFile == "")
+                                    contentFile = "Workspace Name, Service Count, CP\n"
 
-//  @Query(value = "SELECT * FROM newproduct bg WHERE " +
-//          "bg.status != 2 AND (" +
-//          "LOWER(bg.drug_code) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
-//          "OR LOWER(bg.generic_name) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
-//          "OR LOWER(bg.group_name) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
-//          "OR LOWER(bg.product_id) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
-//          "OR LOWER(bg.mrp) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
-//          "OR LOWER(bg.unit_size) LIKE LOWER(CONCAT('%', :searchText, '%')))",
-//          nativeQuery = true)
-//  Page<Newproduct> findAllNewProductsAndStatusNot22(@Param("searchText") String searchText,Pageable pageable);
+                                logger.info("********** Fetching Workspaces ************** - ${CP}")
+                                WorkSpacesList.clear()
+                                getworkspaces(CP)
 
+                                for (i = 0; i < WorkSpacesList.size(); i++) {
+                                    if (WorkSpacesList[i].contains("-")) {
+                                        try {
+                                            counterworkspace = counterworkspace + 1
+                                            echo("Processing workspace " + WorkSpacesList[i] + " ${i} count: ${counterworkspace}")
 
-    //  Page<Newproduct> findAllNewProductsAndStatusNot22(Pageable pageable,@Param("searchText") String searchText);
+                                            def servicecount = this.getworkspaceservices(CP, "${WorkSpacesList[i]}")
+                                            contentFile += WorkSpacesList[i] + "," + servicecount + "," + "CP" + "\n"
 
-   // Page<Newproduct> findAllNewProductsAndStatusNot22(Pageable pageable,@Param("searchText") String searchText);
+                                        } catch (Exception e) {
+                                            error("Error fetching workspace data: " + e.getMessage())
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (contentFile == "") {
+                                    contentFile = "Workspace Name,Service Count,Service Name, CP\n"
+                                }
+                                getCPLicenceinfo("${CP}", "${j}")
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                error("Error during report generation: " + e.getMessage())
+            }
 
-    @Query(value = "SELECT * FROM newproduct np WHERE np.status != 2 ORDER BY " +
-            "CASE WHEN :columnName = 'product_id' THEN np.product_id END ASC, " +
-            "CASE WHEN :columnName = 'drug_code' THEN np.drug_code END ASC, " +
-            "CASE WHEN :columnName = 'generic_name' THEN np.generic_name END ASC, " +
-            "CASE WHEN :columnName = 'group_name' THEN np.group_name END ASC, " +
-            "CASE WHEN :columnName = 'mrp' THEN np.mrp END ASC, " +
-            "CASE WHEN :columnName = 'unit_size' THEN np.unit_size END ASC",nativeQuery = true)
-    Page<Newproduct> searchAndOrderByASC(@Param("columnName") String columnName, Pageable pageable);
+            String filename = "Report_Detail.csv"
+            echo "Writing report to: ./Report/${filename}"
 
-//    @Query(value = "SELECT * FROM newproduct np WHERE Status !=2 ORDER BY np.product_id ASC,np.drug_code ASC,np.generic_name ASC,np.group_name ASC,np.mrp ASC,np.unit_size ASC ", nativeQuery = true)
-//    Page<Newproduct> searchAndOrderByASC(String columnName, Pageable pageable);
+            writeFile file: "./Report/${filename}", text: "${contentFile}"
+            echo "Report file written successfully."
 
-    @Query(value = "SELECT * FROM newproduct np " +
-            "WHERE np.status != 2 " +
-            "ORDER BY " +
-            "CASE WHEN :columnName = 'product_id' THEN np.product_id END DESC, " +
-            "CASE WHEN :columnName = 'drug_code' THEN np.drug_code END DESC, " +
-            "CASE WHEN :columnName = 'generic_name' THEN np.generic_name END DESC, " +
-            "CASE WHEN :columnName = 'group_name' THEN np.group_name END DESC, " +
-            "CASE WHEN :columnName = 'mrp' THEN np.mrp END DESC, " +
-            "CASE WHEN :columnName = 'unit_size' THEN np.unit_size END DESC ", nativeQuery = true )
-    Page<Newproduct> searchAndOrderByDESC(Pageable pageable, @Param("columnName") String columnName);
+            // **NEW: Save JSON data in /resources folder**
+            try {
+                def jsonData = [
+                    "date": rundate,
+                    "environment": envlist,
+                    "cp": CP,
+                    "workspaces": WorkSpacesList,
+                    "report": contentFile
+                ]
 
-   // Page<Newproduct> searchAndOrderByDESC( Pageable pageable,@Param("columnName") String columnName);
-//    @Query(value = "SELECT * FROM newproduct np WHERE Status !=2 ORDER BY np.product_id DESC,np.drug_code DESC,np.generic_name DESC,np.group_name DESC,np.mrp DESC,np.unit_size DESC ", nativeQuery = true)
-//    Page<Newproduct> searchAndOrderByDESC(Pageable pageable, String columnName);
+                def jsonString = JsonOutput.prettyPrint(JsonOutput.toJson(jsonData))
+                String jsonFilename = "./resources/report_data.json"
 
-   // @Query(value = "SELECT * FROM newproduct np WHERE (np.drug_code like concat('%',?1,'%') or np.generic_name like concat('%',?1,'%') or np.group_name like concat('%',?1,'%') or np.mrp like concat('%',?1,'%') or np.unit_size like concat('%',?1,'%')) AND np.status !=2 ORDER BY np.product_id ASC,np.drug_code ASC,np.generic_name ASC,np.group_name ASC,np.mrp ASC,np.unit_size ASC ", nativeQuery = true)
-   @Query(value = "SELECT * FROM newproduct bg WHERE " +
-           "(LOWER(bg.drug_code) = LOWER(:searchText) " +
-                   "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-                   "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-                   "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-                   "OR LOWER(bg.unit_size) = LOWER(:searchText)) " +
-                   "AND bg.status != 2 " +
-           " ORDER BY " +
-           " CASE WHEN :columnName = 'drug_code' THEN bg.drug_code END ASC," +
-           " CASE WHEN :columnName = 'generic_name' THEN bg.generic_name END ASC," +
-           " CASE WHEN :columnName = 'group_name' THEN bg.group_name END ASC," +
-           " CASE WHEN :columnName = 'mrp' THEN bg.mrp END ASC," +
-           " CASE WHEN :columnName = 'unit_size' THEN bg.unit_size END ASC", nativeQuery = true)
-    Page<Newproduct> findASC(@Param("searchText") String searchText,@Param("columnName") String columnName, Pageable pageable);
+                // Ensure directory exists
+                sh "mkdir -p ./resources"
 
+                writeFile file: jsonFilename, text: jsonString
+                echo "JSON data successfully written to: ${jsonFilename}"
+            } catch (Exception e) {
+                error("Error writing JSON data: " + e.getMessage())
+            }
 
-   // @Query(value = "SELECT * FROM newproduct np WHERE (np.drug_code like concat('%',?1,'%') or np.generic_name like concat('%',?1,'%') or np.group_name like concat('%',?1,'%') or np.mrp like concat('%',?1,'%') or np.unit_size like concat('%',?1,'%')) AND np.status !=2 ORDER BY np.product_id DESC,np.drug_code DESC,np.generic_name DESC,np.group_name DESC,np.mrp DESC,np.unit_size DESC ", nativeQuery = true)
-   @Query(value = "SELECT * FROM newproduct bg WHERE " +
-           "(LOWER(bg.drug_code) = LOWER(:searchText) " +
-           "OR LOWER(bg.generic_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.group_name) = LOWER(:searchText) " +
-           "OR LOWER(bg.mrp) = LOWER(:searchText) " +
-           "OR LOWER(bg.unit_size) = LOWER(:searchText)) " +
-           "AND bg.status != 2 " +
-           " ORDER BY " +
-           " CASE WHEN :columnName = 'drug_code' THEN bg.drug_code END DESC," +
-           " CASE WHEN :columnName = 'generic_name' THEN bg.generic_name END DESC," +
-           " CASE WHEN :columnName = 'group_name' THEN bg.group_name END DESC," +
-           " CASE WHEN :columnName = 'mrp' THEN bg.mrp END DESC," +
-           " CASE WHEN :columnName = 'unit_size' THEN bg.unit_size END DESC", nativeQuery = true)
-    Page<Newproduct> findDESC(@Param("searchText")String searchText, @Param("columnName")String columnName, Pageable pageable);
+            // **Email Notification**
+            String tempworkspacename1 = "${workspace_name}".replace("-DEV", "")
+            String message = """Hi Team,
 
+This is an auto-generated mail for ${tempworkspacename1}.
+Please find the attached report for Workspaces, Services, Routes, and Plugins.
 
-    List<Newproduct> findAllByStatus(Short status);
+For any queries, please reach out to the team.
 
+Thanks
+"""
 
-
-    Page<Newproduct> findAllByStatus(Short status, Pageable pageable);
-}
+            emailext to: "${email_reciver}",
+                subject: "Admin API Pipeline Report - ${tempworkspacename1}",
+                attachLog: false,
+                attachmentsPattern: "Report/${filename}",
+                body: message
+        }
+    }
+    }
