@@ -1,20 +1,13 @@
 import groovy.transform.Field
-import java.io.File
 import groovy.json.JsonSlurper
 import java.text.SimpleDateFormat
 
-// Define global variables
+// Global Variables
 @Field String gcrNode = "cm-linux-cjoc"
 @Field def logger
-@Field Boolean jobFailed = false
-@Field String kongDeploymentAccountCredID = "Kong_Deployment_Pipeline_User"
-@Field String KONGSandbox_CREDID = "KONGSandbox"
-@Field String KONGdev = "KONGdev"
-
-// Define lists and maps
 @Field String contentFile = ""
 @Field def WorkSpacesList = []
-@Field def rundate
+@Field def email_recipient = "navneet.patidar@noexternalmail.hsbc.com"
 @Field String sourceType = "HAP_JENKINS_KONG"
 
 def call(Map config) {
@@ -27,166 +20,112 @@ def call(Map config) {
             try {
                 cleanWs()
                 gitCheckout()
-                sh '''
-                    >> email_data.txt
-                    ls
-                    echo "DATE,ENVIRONMENT,CP,DATAPLANE,STATUS" >> email_data.txt
-                '''
-                
+
                 def date = new Date()
                 SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy")
-                rundate = sdf.format(date)
+                def rundate = sdf.format(date)
                 echo "Run Date: ${rundate}"
-
-                def environmentList = ["dev-HK", "dev-UK", "ppd-HK", "ppd-UK", "prd-HK", "prd-UK"]
-                def buildNo = env.BUILD_NUMBER
-                echo "Build Number: ${buildNo}"
-
-                // Process JSON files for License Data
-                processJson(environmentList)
             } catch (Exception e) {
-                error("Error during Checkout stage: " + e.getMessage())
+                error("Error during checkout: " + e.getMessage())
             }
         }
 
-        stage("Report Generation Process") {
+        stage("Process JSON & Generate CSV") {
             try {
-                def counter = 0
-                def counterworkspace = 0
-                
-                for (def j in ["dev-HK", "dev-UK", "ppd-HK", "ppd-UK"]) {
-                    echo "Processing Environment: ${j}"
-                    
-                    def configDetailsGKEYaml = readYaml text: libraryResource("GKE.yaml")
-                    def configurationGKEYML = readYaml file: "resources/GKE.yaml"
-
-                    def configGKEYML = configurationGKEYML."${j}"
-                    def CP = configGKEYML.CP
-                    def DP_SHARED = configGKEYML.DP_Shared
-
-                    def dplist1 = ["${DP_SHARED}", configGKEYML.DP_cto, configGKEYML.DP_et, configGKEYML.DP_gdt]
-
-                    if (counter < 5000) {
-                        counter++
-                        testAuth(CP)
-
-                        if (workspace_name == "ALL") {
-                            if (contentFile == "")
-                                contentFile = "Workspace Name,Service Count,CP\n"
-
-                            WorkSpacesList.clear()
-                            getworkspaces(CP)
-
-                            for (i = 0; i < WorkSpacesList.size(); i++) {
-                                if (WorkSpacesList[i].contains("-")) {
-                                    try {
-                                        counterworkspace++
-                                        def servicecount = getworkspaceservices(CP, "${WorkSpacesList[i]}")
-                                        contentFile += "${WorkSpacesList[i]},${servicecount},CP\n"
-                                    } catch (Exception e) {
-                                        error("Error fetching workspace services: " + e.getMessage())
-                                    }
-                                }
-                            }
-                        } else {
-                            getCPLicenceinfo("${CP}", "${j}")
-                        }
-                    }
-                }
+                processJsonFiles()
             } catch (Exception e) {
-                error("Error during Report Generation: " + e.getMessage())
+                error("Error processing JSON files: " + e.getMessage())
             }
         }
 
-        stage("Generate & Send CSV Report") {
+        stage("Send Report via Email") {
             try {
-                String filename = "Report_Detail.csv"
-                writeFile file: "./Report/${filename}", text: contentFile
-                echo "CSV File Generated: ${filename}"
-
-                String responseBody = readFile encoding: 'UTF-8', file: "./Report/${filename}"
-                echo "CSV Content Preview:\n${responseBody}"
-
-                sendEmail(filename)
+                sendEmailWithCSV()
             } catch (Exception e) {
-                error("Error generating CSV report: " + e.getMessage())
+                error("Error sending email: " + e.getMessage())
             }
         }
     }
 }
 
-// Function to process JSON files and generate CSV data
-def processJson(List environmentList) {
-    def jsonFilePaths = environmentList.collect { "${it}_license.json" }
+// Function to process JSON files and generate CSV
+def processJsonFiles() {
+    def jsonFilePaths = [
+        "dev-HK_license.json", "dev-UK_license.json", 
+        "ppd-HK_license.json", "ppd-UK_license.json"
+    ]
 
     jsonFilePaths.each { filePath ->
         def jsonData = loadJsonFile(filePath)
         if (jsonData) {
             convertJsonToCsv(jsonData, filePath)
         } else {
-            println "Skipping file due to error: ${filePath}"
+            echo "Skipping file due to load failure: ${filePath}"
         }
     }
 }
 
 // Function to load JSON file
-def loadJsonFile(filePath) {
+def loadJsonFile(String filePath) {
     try {
-        def fileContent = new File(filePath).text
+        def file = new File(filePath)
+        if (!file.exists()) {
+            echo "File not found: ${filePath}"
+            return null
+        }
+
+        def fileContent = file.text
         return new JsonSlurper().parseText(fileContent)
     } catch (Exception e) {
-        println "Error reading JSON file: ${e.message}"
+        echo "Error reading JSON file: ${e.message}"
         return null
     }
 }
 
-// Function to convert JSON to CSV format
-def convertJsonToCsv(jsonData, filePath) {
+// Function to convert JSON to CSV
+def convertJsonToCsv(jsonData, String filePath) {
     try {
-        if (jsonData) {
-            def environment = new File(filePath).getName().replace(".json", "")
+        def environment = new File(filePath).getName().replace(".json", "")
+        def servicesCount = jsonData.services_count ?: 0
+        def rbacUsers = jsonData.rbac_users ?: 0
+        def kongVersion = jsonData.kong_version ?: "Unknown"
+        def dbVersion = jsonData.db_version ?: "Unknown"
+        def uname = jsonData.system_info?.uname ?: "Unknown"
+        def hostname = jsonData.system_info?.hostname ?: "Unknown"
+        def cores = jsonData.system_info?.cores ?: "Unknown"
+        def workspacesCount = jsonData.workspaces_count ?: 0
+        def licenseKey = jsonData.license?.license_key ?: "N/A"
 
-            def servicesCount = jsonData.services_count ?: 0
-            def rbacUsers = jsonData.rbac_users ?: 0
-            def kongVersion = jsonData.kong_version ?: "N/A"
-            def dbVersion = jsonData.db_version ?: "N/A"
-            def uname = jsonData.system_info.uname ?: "N/A"
-            def hostname = jsonData.system_info.hostname ?: "N/A"
-            def cores = jsonData.system_info.cores ?: 0
-            def workspacesCount = jsonData.workspaces_count ?: 0
-            def licenseKey = jsonData.containsKey("license") ? jsonData.license.license_key : "N/A"
+        def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version",
+                       "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
+        def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion,
+                      uname, hostname, cores, workspacesCount, licenseKey]
 
-            if (contentFile.isEmpty()) {
-                contentFile = "Environment,Services_Count,RBAC_Users,Kong_Version,DB_Version,Uname,Hostname,Cores,Workspaces_Count,License_Key\n"
-            }
+        def csvContent = headers.join(",") + "\n" + values.join(",")
+        def csvFilePath = filePath.replace(".json", ".csv")
 
-            contentFile += "${environment},${servicesCount},${rbacUsers},${kongVersion},${dbVersion},${uname},${hostname},${cores},${workspacesCount},${licenseKey}\n"
-            println "Data added for environment: ${environment}"
-        }
+        new File(csvFilePath).text = csvContent
+        echo "CSV file created successfully: ${csvFilePath}"
     } catch (Exception e) {
-        println "Error converting JSON to CSV: ${e.message}"
+        echo "Error converting JSON to CSV: ${e.message}"
     }
 }
 
-// Function to send an email with the CSV attachment
-def sendEmail(String filename) {
-    String message = """\
-        Hi Team,
+// Function to send email with the generated CSV file
+def sendEmailWithCSV() {
+    def csvFiles = ["dev-HK_license.csv", "dev-UK_license.csv", "ppd-HK_license.csv", "ppd-UK_license.csv"]
+    def attachmentPattern = csvFiles.findAll { new File(it).exists() }.join(",")
 
-        This is an auto-generated email.
-
-        Please find attached the latest license report.
-
-        Best regards.
-    """.stripIndent()
-
-    emailext(
-        to: "navneet.patidar@noexternalmail.hsbc.com",
-        subject: "Admin API Pipeline Report",
-        attachLog: false,
-        attachmentsPattern: "Report/${filename}",
-        body: message
-    )
-
-    println "Email sent successfully with attachment: ${filename}"
-	}
+    if (attachmentPattern) {
+        emailext(
+            to: email_recipient,
+            subject: "Kong License Report",
+            attachLog: false,
+            attachmentsPattern: attachmentPattern,
+            body: "Hi Team,\n\nPlease find attached the latest Kong License Report.\n\nThanks."
+        )
+        echo "Email sent successfully with attachments: ${attachmentPattern}"
+    } else {
+        echo "No CSV files found to attach."
+    }
+}
