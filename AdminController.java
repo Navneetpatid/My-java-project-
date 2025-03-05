@@ -1,22 +1,26 @@
-// Define the filename
-String filename = "${filename}_license.json"
-
-// Write the response to a JSON file
-writeFile file: filename, text: response
-echo "getworkspaceservices response ends"
-
-// Read the file correctly
+// Read the file correctly with debugging
 try {
-    def file = new File(filename)
+    // Print the expected filename
+    echo "Attempting to read file: ${filename}"
+
+    // Ensure the full path is correct
+    def filePath = "${WORKSPACE}/${filename}_license.json"
+    echo "Checking file at: ${filePath}"
+
+    def file = new File(filePath)
+    
     if (file.exists()) {
-        String fileContent = file.text
+        // Read the file content
+        String fileContent = file.getText('UTF-8')
+
+        // Print success and content
         echo "Read file executed successfully"
         echo "File Content:\n${fileContent}"
     } else {
-        echo "File not found: ${filename}"
+        // Print error if file does not exist
+        echo "File not found: ${filePath}"
     }
 } catch (Exception e) {
+    // Catch any errors and print
     echo "Error reading file: ${e.getMessage()}"
 }
-
-return 0;
