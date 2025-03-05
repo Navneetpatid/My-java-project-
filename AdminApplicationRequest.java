@@ -1,49 +1,49 @@
-def processJson() {
-    // Fetch JSON files dynamically from the Jenkins workspace
-    def workspacePath = new File("${env.WORKSPACE}")  // Jenkins workspace path
-    def jsonFiles = workspacePath.listFiles().findAll { it.name.endsWith(".json") }
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
 
-    jsonFiles.each { file ->
-        def jsonData = loadJsonFile(file.absolutePath)
-        if (jsonData == null) {
-            println("JSON file loading failed for: ${file.name}")
-        } else {
-            println("Successfully loaded JSON file: ${file.name}")
-            convertJsonToCsv(jsonData, file.name)
-        }
-    }
+// Define file paths
+String jsonFilePath = "${env.WORKSPACE}/data.json"
+String csvFilePath = "${env.WORKSPACE}/output.csv"
 
-    // Define the output CSV filename in the workspace
-    String filename = "${env.WORKSPACE}/mycsvnew.csv";
-    println("Filename for writing: ${filename}");
-
-    println("Filename for content file: ${myFinalOutput}");
-    writeFile file: "${filename}", text: "${myFinalOutput}";
-
-    // Read the generated CSV file
-    String responseBody = readFile encoding: 'UTF-8', file: "${filename}";
-    println("Response body: ${responseBody}");
-    println("Read file executed successfully");
-
-    // Send an email with the CSV file attached
-    println("Sending Email to Recipients with file ${filename}");
-    String message = "Hi Team,\n\nThis is an auto-generated mail.\nPlease find the attached report for Workspace, Services, Routes, and Plugins.\nFor any queries, please reach out to the Team.\n";
-
-    emailext(
-        to: "navneet.patidar@noexternalmail.hsbc.com",
-        subject: "Admin API Pipeline Report",
-        body: message,
-        attachLog: true,
-        attachmentsPattern: "${filename}"
-    )
+// Read JSON file
+echo "Reading JSON file from: ${jsonFilePath}"
+def jsonFile = new File(jsonFilePath)
+if (!jsonFile.exists()) {
+    error "JSON file not found at ${jsonFilePath}"
 }
 
-// Function to load JSON file content
-def loadJsonFile(String filePath) {
-    try {
-        return new groovy.json.JsonSlurper().parse(new File(filePath))
-    } catch (Exception e) {
-        println("Error parsing JSON: ${e.message}")
-        return null
-    }
+def jsonData = new JsonSlurper().parseText(jsonFile.text)
+
+// Convert JSON to CSV
+def csvContent = new StringBuilder()
+def keys = jsonData[0].keySet().join(",")  // Extract headers
+csvContent.append(keys).append("\n")
+
+jsonData.each { row ->
+    csvContent.append(row.values().join(",")).append("\n")
 }
+
+// Write CSV file
+echo "Writing CSV file to: ${csvFilePath}"
+new File(csvFilePath).text = csvContent.toString()
+
+// Read the generated CSV file
+String responseBody = new File(csvFilePath).text
+echo "CSV File Content:\n${responseBody}"
+
+// Send an email with the CSV file attached
+echo "Sending Email with CSV file..."
+emailext(
+    to: "navneet.patidar@noexternalmail.hsbc.com",
+    subject: "Admin API Pipeline Report",
+    body: """Hi Team,
+
+This is an auto-generated email.
+Please find the attached report.
+
+Regards,
+Automated System""",
+    attachmentsPattern: csvFilePath
+)
+
+echo "Process completed successfully!"
