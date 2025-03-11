@@ -1,10 +1,15 @@
-package com.janaushadhi.adminservice.requestpayload;
+from selenium import webdriver
+from helper_methods.perform_cr_test import capture_change_request
 
-import java.util.List;
+# Initialize WebDriver
+driver = webdriver.Chrome()  # Ensure chromedriver.exe is in the same directory or in PATH
 
-import lombok.Data;
-@Data
-public class AdminDistrictPayload {
-	
-	private List<Long> districtId;
-}
+# Define inputs
+CR_number = "CHANGE_REQUEST_123"
+screenshot_path = "C:/path/to/screenshots"  # Change this to an actual path
+
+# Call the function
+capture_change_request(driver, CR_number, screenshot_path)
+
+# Close the driver
+driver.quit()
