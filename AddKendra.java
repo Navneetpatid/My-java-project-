@@ -1,11 +1,14 @@
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HapCDRServiceImpl implements HapCDRService {
     private static final Logger LOGGER = LogManager.getLogger(HapCDRServiceImpl.class);
 
     public String processKongCerRequest(KongCerRequest request) {
-        String response = "Processing completed successfully";
+        String response = "";
         try {
             LOGGER.info("Received request: {}", request);
 
@@ -27,6 +30,13 @@ public class HapCDRServiceImpl implements HapCDRService {
 
             engagementTargetKongDao.save(engagementTargetKong);
             LOGGER.info("Re-saved EngagementTargetKong successfully");
+
+            // Creating the response JSON
+            Map<String, String> responseMap = new HashMap<>();
+            responseMap.put("message", "Kong data saved successfully");
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            response = objectMapper.writeValueAsString(responseMap);
 
         } catch (Exception e) {
             LOGGER.error("Error processing request: {}", e.getMessage(), e);
