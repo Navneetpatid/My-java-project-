@@ -1,12 +1,13 @@
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class HapCDRServiceImpl implements HapCDRService {
-    private static final Logger LOGGER = Logger.getLogger(HapCDRServiceImpl.class);
+    private static final Logger LOGGER = LogManager.getLogger(HapCDRServiceImpl.class);
 
     public String processKongCerRequest(KongCerRequest request) {
         String response = "Processing completed successfully";
         try {
-            LOGGER.info("Received request: " + request);
+            LOGGER.info("Received request: {}", request);
 
             EngagementTargetKong engagementTargetKong = requestResponseMapper.mapToEngagementTargetKong(request);
             engagementTargetKongDao.save(engagementTargetKong);
@@ -28,11 +29,11 @@ public class HapCDRServiceImpl implements HapCDRService {
             LOGGER.info("Re-saved EngagementTargetKong successfully");
 
         } catch (Exception e) {
-            LOGGER.error("Error processing request: " + e.getMessage(), e);
+            LOGGER.error("Error processing request: {}", e.getMessage(), e);
             throw new ApplicationException(e.getMessage());
         }
 
-        LOGGER.info("Returning response: " + response);
+        LOGGER.info("Returning response: {}", response);
         return response;
     }
 }
