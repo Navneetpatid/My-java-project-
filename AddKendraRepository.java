@@ -7,20 +7,26 @@ public KongApiResponse getCERData(String engagementId, String region, String pla
     // Fetch cp_master data by platform and environment
     List<CpMaster> cpMastersByPlatformAndEnv = cpMasterDetailsDao.findById_PlatformAndId_Environment(platform, environment);
 
-    // Combine results (Optional: Handle duplicates or conflicts)
-    Set<CpMaster> uniqueCpMasters = new HashSet<>();
-    uniqueCpMasters.addAll(cpMastersByRegion);
-    uniqueCpMasters.addAll(cpMastersByPlatformAndEnv);
+    // Combine results safely
+    List<CpMaster> combinedCpMasters = new ArrayList<>();
+    
+    if (cpMastersByRegion != null) {
+        combinedCpMasters.addAll(cpMastersByRegion);
+    }
 
-    if (!uniqueCpMasters.isEmpty()) {
-        responseDTO.setCpMaster(new ArrayList<>(uniqueCpMasters));
+    if (cpMastersByPlatformAndEnv != null) {
+        combinedCpMasters.addAll(cpMastersByPlatformAndEnv);
+    }
+
+    if (!combinedCpMasters.isEmpty()) {
+        responseDTO.setCpMaster(combinedCpMasters);
     } else {
         responseDTO.setErrors("No data found in cp_master for given parameters");
     }
 
     // Fetch engagement plugin data
     List<EngagementPluginDetail> engagementPlugins = engagementPluginDetailsDao.findByEngagementId(engagementId);
-    responseDTO.setEngagementPlugins(engagementPlugins);
+    responseDTO.setEngagementPlugins(engagementPlugins != null ? engagementPlugins : new ArrayList<>());
 
     return responseDTO;
 }
