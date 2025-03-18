@@ -1,26 +1,34 @@
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
-
+import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
-public class BindingValidationUtil {
+@Service
+public class HapCDRServiceImpl implements HapCDRService {
 
-    public static ResponseEntity<Object> requestValidation(BindingResult bindingResult) {
-        StringBuilder errorMessage = new StringBuilder();
-        Map<String, Object> map = new HashMap<>();
+    public ResponseEntity<Map<String, String>> processKongCerRequest(@Valid KongCerRequest request) {
+        Map<String, String> responseMap = new HashMap<>();
+        
+        try {
+            engagementPluginDetailsDao.save(engagementPluginDetail);
+            LOGGER.info("Saved EngagementPluginDetail successfully!");
 
-        for (ObjectError error : bindingResult.getAllErrors()) {
-            errorMessage.append(error.getDefaultMessage()).append(". ");
+            CpMaster cpMaster = requestResponseMapper.mapToCpMaster(request);
+            cpMasterDetailsDao.save(cpMaster);
+            LOGGER.info("Saved CpMaster successfully!");
+
+            engagementTargetKongDao.save(engagementTargetKong);
+            LOGGER.info("Saved EngagementTargetKong successfully!");
+
+            // Creating JSON response
+            responseMap.put("message", "Kong data saved successfully!");
+            return ResponseEntity.ok(responseMap);
+
+        } catch (Exception e) {
+            LOGGER.error("Error while processing KongCerRequest: {}", e.getMessage());
+            
+            responseMap.put("error", "Internal Server Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(responseMap);
         }
-
-        map.put(DataConstant.RESPONSE_CODE, DataConstant.BAD_REQUEST);
-        map.put(DataConstant.MESSAGE, errorMessage.toString());
-        map.put(DataConstant.RESPONSE_BODY, null);
-
-        return ResponseEntity.ok(map);
     }
 }
