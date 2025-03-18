@@ -1,31 +1,74 @@
-package com.hsbc.hap.cdr.exception;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
-public class GlobalExceptionHandler {
+@Service
+public class HapCDRServiceImpl implements HapCDRService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HapCDRServiceImpl.class);
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            errors.put(error.getField(), error.getDefaultMessage());
+    @Override
+    public String processKongCerRequest(@Valid KongCerRequest request) {
+        // Validate fields manually
+        validateRequestFields(request);
+
+        String response = "";
+        try {
+            LOGGER.info("Received request: {}", request);
+
+            // Mapping and saving data
+            EngagementTargetKong engagementTargetKong = requestResponseMapper.mapToEngagementTargetKong(request);
+            engagementTargetKongDao.save(engagementTargetKong);
+            LOGGER.info("Saved EngagementTargetKong successfully!");
+
+            WorkspaceTargetDetails workspaceTargetDetails = requestResponseMapper.mapToWorkspaceTargetDetails(request);
+            workspaceTargetDetailsDao.save(workspaceTargetDetails);
+            LOGGER.info("Saved WorkspaceTargetDetails successfully!");
+
+            EngagementPluginDetail engagementPluginDetail = requestResponseMapper.mapToEngagementPluginDetail(request);
+            engagementPluginDetailsDao.save(engagementPluginDetail);
+            LOGGER.info("Saved EngagementPluginDetail successfully!");
+
+            CpMaster cpMaster = requestResponseMapper.mapToCpMaster(request);
+            cpMasterDetailsDao.save(cpMaster);
+            LOGGER.info("Saved CpMaster successfully!");
+
+            engagementTargetKongDao.save(engagementTargetKong);
+            LOGGER.info("Re-saved EngagementTargetKong successfully!");
+
+            // Creating the response JSON
+            Map<String, String> responseMap = new HashMap<>();
+            responseMap.put("message", "Kong data saved successfully!");
+
+            return responseMap.toString();
+        } catch (Exception e) {
+            LOGGER.error("Error while processing KongCerRequest: {}", e.getMessage());
+            throw new RuntimeException("Internal Server Error: " + e.getMessage());
         }
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<Map<String, String>> handleCustomValidationException(ValidationException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    // Method to validate request fields
+    private void validateRequestFields(KongCerRequest request) {
+        if (request.getEngagementId() == null || request.getEngagementId().trim().isEmpty()) {
+            throw new ValidationException("Engagement ID can't be empty!");
+        }
+        if (request.getMandatoryPlugin() == null || request.getMandatoryPlugin().trim().isEmpty()) {
+            throw new ValidationException("Mandatory Plugin can't be empty!");
+        }
+        if (request.getDpPlatform() == null || request.getDpPlatform().trim().isEmpty()) {
+            throw new ValidationException("DP Platform can't be empty!");
+        }
+        if (request.getRegion() == null || request.getRegion().trim().isEmpty()) {
+            throw new ValidationException("Region can't be empty!");
+        }
+        if (request.getEnvironment() == null || request.getEnvironment().trim().isEmpty()) {
+            throw new ValidationException("Environment can't be empty!");
+        }
+        if (request.getDpHostUrl() == null || request.getDpHostUrl().trim().isEmpty()) {
+            throw new ValidationException("DP Host URL can't be empty!");
+        }
     }
-}
+            }
