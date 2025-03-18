@@ -1,128 +1,31 @@
-package com.hsbc.hap.cdr.model;
+package com.hsbc.hap.cdr.exception;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-public class KongCerRequest {
-    
-    @NotEmpty(message = "Engagement ID can't be empty!")
-    @NotNull(message = "Engagement ID can't be null!")
-    private String engagementId;
+import java.util.HashMap;
+import java.util.Map;
 
-    @NotEmpty(message = "Mandatory Plugin can't be empty!")
-    @NotNull(message = "Mandatory Plugin can't be null!")
-    private String mandatoryPlugin;
+@RestControllerAdvice
+public class GlobalExceptionHandler {
 
-    @NotEmpty(message = "Region can't be empty!")
-    @NotNull(message = "Region can't be null!")
-    private String region;
-
-    @NotEmpty(message = "Network Region can't be empty!")
-    @NotNull(message = "Network Region can't be null!")
-    private String networkRegion;
-
-    @NotEmpty(message = "Workspace can't be empty!")
-    @NotNull(message = "Workspace can't be null!")
-    private String workspace;
-
-    @NotEmpty(message = "Environment can't be empty!")
-    @NotNull(message = "Environment can't be null!")
-    private String environment;
-
-    @NotEmpty(message = "DP Platform can't be empty!")
-    @NotNull(message = "DP Platform can't be null!")
-    private String dpPlatform;
-
-    @NotEmpty(message = "DP Host URL can't be empty!")
-    @NotNull(message = "DP Host URL can't be null!")
-    private String dpHostUrl;
-
-    @NotEmpty(message = "CP Admin API URL can't be empty!")
-    @NotNull(message = "CP Admin API URL can't be null!")
-    private String cpAdminApiUrl;
-
-    @NotEmpty(message = "GBOF can't be empty!")
-    @NotNull(message = "GBOF can't be null!")
-    private String gbof;
-
-    // Getters and Setters
-    public String getEngagementId() {
-        return engagementId;
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            errors.put(error.getField(), error.getDefaultMessage());
+        }
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    public void setEngagementId(String engagementId) {
-        this.engagementId = engagementId;
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<Map<String, String>> handleCustomValidationException(ValidationException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
-
-    public String getMandatoryPlugin() {
-        return mandatoryPlugin;
-    }
-
-    public void setMandatoryPlugin(String mandatoryPlugin) {
-        this.mandatoryPlugin = mandatoryPlugin;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    public String getNetworkRegion() {
-        return networkRegion;
-    }
-
-    public void setNetworkRegion(String networkRegion) {
-        this.networkRegion = networkRegion;
-    }
-
-    public String getWorkspace() {
-        return workspace;
-    }
-
-    public void setWorkspace(String workspace) {
-        this.workspace = workspace;
-    }
-
-    public String getEnvironment() {
-        return environment;
-    }
-
-    public void setEnvironment(String environment) {
-        this.environment = environment;
-    }
-
-    public String getDpPlatform() {
-        return dpPlatform;
-    }
-
-    public void setDpPlatform(String dpPlatform) {
-        this.dpPlatform = dpPlatform;
-    }
-
-    public String getDpHostUrl() {
-        return dpHostUrl;
-    }
-
-    public void setDpHostUrl(String dpHostUrl) {
-        this.dpHostUrl = dpHostUrl;
-    }
-
-    public String getCpAdminApiUrl() {
-        return cpAdminApiUrl;
-    }
-
-    public void setCpAdminApiUrl(String cpAdminApiUrl) {
-        this.cpAdminApiUrl = cpAdminApiUrl;
-    }
-
-    public String getGbof() {
-        return gbof;
-    }
-
-    public void setGbof(String gbof) {
-        this.gbof = gbof;
-    }
-    }
+}
