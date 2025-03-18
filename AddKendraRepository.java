@@ -13,7 +13,7 @@ public KongApiResponse getCERData(String engagementId, String region, String pla
     if (cpMastersByRegion != null) {
         combinedCpMasters.addAll(cpMastersByRegion);
     }
-
+GET http://localhost:8080/api/kong/getData?engagementId=999&region=EU&platform=Windows&environment=Staging
     if (cpMastersByPlatformAndEnv != null) {
         combinedCpMasters.addAll(cpMastersByPlatformAndEnv);
     }
