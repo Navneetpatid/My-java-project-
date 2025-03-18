@@ -1,101 +1,128 @@
+package com.hsbc.hap.cdr.model;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
-// Function to load a JSON file
-def loadJsonFile(filePath) {
-    try {
-        def fileContent = new File(filePath).text  // Read file content
-        def jsonData = new JsonSlurper().parseText(fileContent)  // Parse JSON
-        return jsonData
-    } catch (Exception e) {
-        println "Error reading JSON file: ${e.message}"
-        return null
+public class KongCerRequest {
+    
+    @NotEmpty(message = "Engagement ID can't be empty!")
+    @NotNull(message = "Engagement ID can't be null!")
+    private String engagementId;
+
+    @NotEmpty(message = "Mandatory Plugin can't be empty!")
+    @NotNull(message = "Mandatory Plugin can't be null!")
+    private String mandatoryPlugin;
+
+    @NotEmpty(message = "Region can't be empty!")
+    @NotNull(message = "Region can't be null!")
+    private String region;
+
+    @NotEmpty(message = "Network Region can't be empty!")
+    @NotNull(message = "Network Region can't be null!")
+    private String networkRegion;
+
+    @NotEmpty(message = "Workspace can't be empty!")
+    @NotNull(message = "Workspace can't be null!")
+    private String workspace;
+
+    @NotEmpty(message = "Environment can't be empty!")
+    @NotNull(message = "Environment can't be null!")
+    private String environment;
+
+    @NotEmpty(message = "DP Platform can't be empty!")
+    @NotNull(message = "DP Platform can't be null!")
+    private String dpPlatform;
+
+    @NotEmpty(message = "DP Host URL can't be empty!")
+    @NotNull(message = "DP Host URL can't be null!")
+    private String dpHostUrl;
+
+    @NotEmpty(message = "CP Admin API URL can't be empty!")
+    @NotNull(message = "CP Admin API URL can't be null!")
+    private String cpAdminApiUrl;
+
+    @NotEmpty(message = "GBOF can't be empty!")
+    @NotNull(message = "GBOF can't be null!")
+    private String gbof;
+
+    // Getters and Setters
+    public String getEngagementId() {
+        return engagementId;
     }
-}
 
-// Function to convert JSON to CSV
-def convertJsonToCsv(jsonData, filePath) {
-    try {
-        if (jsonData) {
-            // Extract environment name from file name
-            def environment = new File(filePath).getName().replace(".json", "")
-
-            // Extract relevant fields
-            def servicesCount = jsonData.services_count
-            def rbacUsers = jsonData.rbac_users
-            def kongVersion = jsonData.kong_version
-            def dbVersion = jsonData.db_version
-            def uname = jsonData.system_info.uname
-            def hostname = jsonData.system_info.hostname
-            def cores = jsonData.system_info.cores
-            def workspacesCount = jsonData.workspaces_count
-            def licenseKey = jsonData.containsKey("license") ? jsonData.license.license_key : "N/A"
-
-            // Define CSV headers and values
-            def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version",
-                           "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
-            def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion,
-                          uname, hostname, cores, workspacesCount, licenseKey]
-
-            // Generate CSV content
-            def csvContent = headers.join(",") + "\n" + values.join(",")
-
-            // Write CSV file
-            def csvFilePath = filePath.replace(".json", ".csv")
-            new File(csvFilePath).text = csvContent
-            println "CSV file created successfully: ${csvFilePath}"
-        } else {
-            println "Error: JSON data is null or incorrect format"
-        }
-    } catch (Exception e) {
-        println "Error converting JSON to CSV: ${e.message}"
+    public void setEngagementId(String engagementId) {
+        this.engagementId = engagementId;
     }
-}
 
-// Function to process multiple JSON files and generate CSV files
-def processJson() {
-    def jsonFilePaths = [
-        "dev-HK_license.json", "dev-UK_license.json", 
-        "ppd-HK_license.json", "ppd-UK_license.json"
-    ]
-
-    jsonFilePaths.each { filePath ->
-        def jsonData = loadJsonFile(filePath)
-        if (jsonData == null) {
-            println "JSON file loading failed for: ${filePath}"
-        } else {
-            println "Successfully loaded JSON file: ${filePath}"
-            convertJsonToCsv(jsonData, filePath)
-        }
+    public String getMandatoryPlugin() {
+        return mandatoryPlugin;
     }
-}
 
-// Main execution
-processJson()
+    public void setMandatoryPlugin(String mandatoryPlugin) {
+        this.mandatoryPlugin = mandatoryPlugin;
+    }
 
-// Write output to a file
-String filename = "mycsvnew.csv"
-String myFinalOutput = "CSV conversion completed."
-println "Filename for writing: ${filename}";
-println "Filename for content file: ${myFinalOutput}";
+    public String getRegion() {
+        return region;
+    }
 
-// Save final output
-new File(filename).text = myFinalOutput
-println "Output written to: ${filename}"
+    public void setRegion(String region) {
+        this.region = region;
+    }
 
-// Read file and print response
-String responseBody = new File(filename).text
-println "Response body: ${responseBody}"
-println "Read file executed successfully"
+    public String getNetworkRegion() {
+        return networkRegion;
+    }
 
-// Send email with the generated CSV file
-println "Sending Email to Recipients: ${filename}"
+    public void setNetworkRegion(String networkRegion) {
+        this.networkRegion = networkRegion;
+    }
 
-emailext(
-    to: "navneet.patidar@noexternalmail.hsbc.com",
-    subject: "License Report",
-    attachLog: false,
-    attachmentsPattern: "${filename}",
-    body: "Hi,\n\nPlease find attached the latest license report.\n\nBest regards."
-)
+    public String getWorkspace() {
+        return workspace;
+    }
 
-println "Email sent successfully!"
+    public void setWorkspace(String workspace) {
+        this.workspace = workspace;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
+    public String getDpPlatform() {
+        return dpPlatform;
+    }
+
+    public void setDpPlatform(String dpPlatform) {
+        this.dpPlatform = dpPlatform;
+    }
+
+    public String getDpHostUrl() {
+        return dpHostUrl;
+    }
+
+    public void setDpHostUrl(String dpHostUrl) {
+        this.dpHostUrl = dpHostUrl;
+    }
+
+    public String getCpAdminApiUrl() {
+        return cpAdminApiUrl;
+    }
+
+    public void setCpAdminApiUrl(String cpAdminApiUrl) {
+        this.cpAdminApiUrl = cpAdminApiUrl;
+    }
+
+    public String getGbof() {
+        return gbof;
+    }
+
+    public void setGbof(String gbof) {
+        this.gbof = gbof;
+    }
+    }
