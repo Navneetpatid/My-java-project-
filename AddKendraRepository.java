@@ -1,34 +1,15 @@
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import java.util.HashMap;
-import java.util.Map;
+@PostMapping(value = "/add/kong/data", consumes = "application/json", produces = "application/json")
+public ResponseEntity<Map<String, Object>> processKongCerRequest(@Valid @RequestBody KongCerRequest request, BindingResult result) {
+    LOGGER.info("------ Adding CER Data ------");
 
-@Service
-public class HapCDRServiceImpl implements HapCDRService {
-
-    public ResponseEntity<Map<String, String>> processKongCerRequest(@Valid KongCerRequest request) {
-        Map<String, String> responseMap = new HashMap<>();
-        
-        try {
-            engagementPluginDetailsDao.save(engagementPluginDetail);
-            LOGGER.info("Saved EngagementPluginDetail successfully!");
-
-            CpMaster cpMaster = requestResponseMapper.mapToCpMaster(request);
-            cpMasterDetailsDao.save(cpMaster);
-            LOGGER.info("Saved CpMaster successfully!");
-
-            engagementTargetKongDao.save(engagementTargetKong);
-            LOGGER.info("Saved EngagementTargetKong successfully!");
-
-            // Creating JSON response
-            responseMap.put("message", "Kong data saved successfully!");
-            return ResponseEntity.ok(responseMap);
-
-        } catch (Exception e) {
-            LOGGER.error("Error while processing KongCerRequest: {}", e.getMessage());
-            
-            responseMap.put("error", "Internal Server Error: " + e.getMessage());
-            return ResponseEntity.status(500).body(responseMap);
-        }
+    // Handle validation errors
+    if (result.hasErrors()) {
+        return new ResponseEntity<>(bindingValidationUtil.requestValidation(result), HttpStatus.BAD_REQUEST);
     }
+
+    // Process request
+    Map<String, Object> response = hapCdrService.processKongCerRequest(request);
+    LOGGER.info("------ CER Data Added ------");
+
+    return new ResponseEntity<>(response, HttpStatus.OK);
 }
