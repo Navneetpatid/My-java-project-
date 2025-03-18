@@ -1,15 +1,28 @@
-@PostMapping(value = "/add/kong/data", consumes = "application/json", produces = "application/json")
-public ResponseEntity<Map<String, Object>> processKongCerRequest(@Valid @RequestBody KongCerRequest request, BindingResult result) {
-    LOGGER.info("------ Adding CER Data ------");
+package com.hsbc.hap.cdr.controller;
 
-    // Handle validation errors
-    if (result.hasErrors()) {
-        return new ResponseEntity<>(bindingValidationUtil.requestValidation(result), HttpStatus.BAD_REQUEST);
+import com.hsbc.hap.cdr.dto.KongApiResponseDTO;
+import com.hsbc.hap.cdr.service.CERService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/kong")
+public class CERController {
+
+    private final CERService cerService;
+
+    public CERController(CERService cerService) {
+        this.cerService = cerService;
     }
 
-    // Process request
-    Map<String, Object> response = hapCdrService.processKongCerRequest(request);
-    LOGGER.info("------ CER Data Added ------");
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("/getData")
+    public ResponseEntity<KongApiResponseDTO> getKongApiData(
+        @RequestParam String engagementId,
+        @RequestParam String region,
+        @RequestParam String platform,
+        @RequestParam String environment
+    ) {
+        KongApiResponseDTO responseDTO = cerService.getKongApiData(engagementId, region, platform, environment);
+        return ResponseEntity.ok(responseDTO);
+    }
 }
