@@ -1,73 +1,51 @@
-package com.hsbc.hap.cdr.service.impl;
+package com.hsbc.hap.cdr.controller;
 
 import com.hsbc.hap.cdr.dto.ResponseDto;
-import com.hsbc.hap.cdr.model.*;
-import com.hsbc.hap.cdr.repository.*;
 import com.hsbc.hap.cdr.request.KongCerRequest;
 import com.hsbc.hap.cdr.service.HapCDRService;
-import com.hsbc.hap.cdr.mapper.RequestResponseMapper;
+import com.hsbc.hap.cdr.util.BindingValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import jakarta.validation.Valid;
 import java.util.Map;
 
-@Service
+@RestController
+@RequestMapping("/api/cdr")
 @RequiredArgsConstructor
-public class HapCDRServiceImpl implements HapCDRService {
+public class CERController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(HapCDRServiceImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CERController.class);
+    private final HapCDRService hapCDRService;
 
-    private final EngagementTargetKongDao engagementTargetKongDao;
-    private final WorkspaceTargetDetailsDao workspaceTargetDetailsDao;
-    private final EngagementPluginDetailsDao engagementPluginDetailsDao;
-    private final CpMasterDao cpMasterDao;
-    private final RequestResponseMapper requestResponseMapper;
+    @PostMapping(value = "/add/kong/data", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ResponseDto<Map<String, Object>>> processKongCerRequest(
+            @Valid @RequestBody KongCerRequest request, BindingResult result) {
 
-    @Override
-    @Transactional
-    public ResponseDto<Map<String, Object>> processKongCerRequest(KongCerRequest request) {
-        try {
-            LOGGER.info("Processing KongCerRequest: {}", request);
+        LOGGER.info("Received request to add CER Data");
 
-            // Mapping and Saving EngagementTargetKong
-            EngagementTargetKong engagementTargetKong = requestResponseMapper.mapToEngagementTargetKong(request);
-            engagementTargetKongDao.save(engagementTargetKong);
-            LOGGER.info("Saved EngagementTargetKong successfully");
-
-            // Mapping and Saving WorkspaceTargetDetails
-            WorkspaceTargetDetails workspaceTargetDetails = requestResponseMapper.mapToWorkspaceTargetDetails(request);
-            workspaceTargetDetailsDao.save(workspaceTargetDetails);
-            LOGGER.info("Saved WorkspaceTargetDetails successfully");
-
-            // Mapping and Saving EngagementPluginDetail
-            EngagementPluginDetail engagementPluginDetail = requestResponseMapper.mapToEngagementPluginDetail(request);
-            engagementPluginDetailsDao.save(engagementPluginDetail);
-            LOGGER.info("Saved EngagementPluginDetail successfully");
-
-            // Mapping and Saving CpMaster
-            CpMaster cpMaster = requestResponseMapper.mapToCpMaster(request);
-            cpMasterDao.save(cpMaster);
-            LOGGER.info("Saved CpMaster successfully");
-
-            // Creating response data
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("engagementTargetKong", engagementTargetKong);
-            responseData.put("workspaceTargetDetails", workspaceTargetDetails);
-            responseData.put("engagementPluginDetail", engagementPluginDetail);
-            responseData.put("cpMaster", cpMaster);
-
-            LOGGER.info("All data processed successfully");
-
-            return new ResponseDto<>(HttpStatus.OK.value(), "Kong data saved successfully", responseData);
-
-        } catch (Exception e) {
-            LOGGER.error("Error processing KongCerRequest", e);
-            return new ResponseDto<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error processing request", null);
+        // Validate the request
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body(new ResponseDto<>(
+                    HttpStatus.BAD_REQUEST.value(),
+                    "Validation failed",
+                    null
+            ));
         }
+
+        // Process the request
+        ResponseDto<Map<String, Object>> response = hapCDRService.processKongCerRequest(request);
+
+        // Log the response
+        LOGGER.info("CER Data Added Successfully");
+
+        // Return structured response with actual saved data
+        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
-        }
+}
