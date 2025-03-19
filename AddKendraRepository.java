@@ -1,12 +1,12 @@
 @PostMapping(value = "/add/kong/data", consumes = "application/json", produces = "application/json")
-public ResponseEntity<ResponseDto<Map<String, String>>> processKongCerRequest(
+public ResponseEntity<ResponseDto<Map<String, Object>>> processKongCerRequest(
         @Valid @RequestBody KongCerRequest request, BindingResult result) {
 
     LOGGER.info("Received request to add CER Data");
 
-    // Check if there are validation errors
+    // Check for validation errors
     if (result.hasErrors()) {
-        Map<String, String> errors = new HashMap<>();
+        Map<String, Object> errors = new HashMap<>();
         result.getFieldErrors().forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
         return ResponseEntity.badRequest().body(new ResponseDto<>(
@@ -16,8 +16,7 @@ public ResponseEntity<ResponseDto<Map<String, String>>> processKongCerRequest(
         ));
     }
 
-    // Process request
-    ResponseDto<Map<String, Object>> response = hapCDRService.processKongCerRequest(request);
-
+    // Process request if no validation errors
+    ResponseDto<Map<String, Object>> response = hapCdrService.processKongCerRequest(request);
     return ResponseEntity.status(response.getStatusCode()).body(response);
 }
