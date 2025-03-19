@@ -1,32 +1,40 @@
-public KongApiResponse getCERData(String engagementId, String region, String platform, String environment) {
-    KongApiResponse responseDTO = new KongApiResponse();
+package com.hsbc.hap.cdr.dto;
 
-    // Fetch cp_master data by region
-    List<CpMaster> cpMastersByRegion = cpMasterDetailsDao.findById_Region(region);
+public class ResponseDto<T> {
+    private int statusCode;
+    private String message;
+    private T data;
 
-    // Fetch cp_master data by platform and environment
-    List<CpMaster> cpMastersByPlatformAndEnv = cpMasterDetailsDao.findById_PlatformAndId_Environment(platform, environment);
-
-    // Combine results safely
-    List<CpMaster> combinedCpMasters = new ArrayList<>();
-    
-    if (cpMastersByRegion != null) {
-        combinedCpMasters.addAll(cpMastersByRegion);
-    }
-GET http://localhost:8080/api/kong/getData?engagementId=999&region=EU&platform=Windows&environment=Staging
-    if (cpMastersByPlatformAndEnv != null) {
-        combinedCpMasters.addAll(cpMastersByPlatformAndEnv);
+    // Constructor
+    public ResponseDto(int statusCode, String message, T data) {
+        this.statusCode = statusCode;
+        this.message = message;
+        this.data = data;
     }
 
-    if (!combinedCpMasters.isEmpty()) {
-        responseDTO.setCpMaster(combinedCpMasters);
-    } else {
-        responseDTO.setErrors("No data found in cp_master for given parameters");
+    // Getters
+    public int getStatusCode() {
+        return statusCode;
     }
 
-    // Fetch engagement plugin data
-    List<EngagementPluginDetail> engagementPlugins = engagementPluginDetailsDao.findByEngagementId(engagementId);
-    responseDTO.setEngagementPlugins(engagementPlugins != null ? engagementPlugins : new ArrayList<>());
+    public String getMessage() {
+        return message;
+    }
 
-    return responseDTO;
+    public T getData() {
+        return data;
+    }
+
+    // Setters
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
 }
