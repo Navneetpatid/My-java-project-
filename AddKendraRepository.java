@@ -13,6 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class HapCDRServiceImpl implements HapCDRService {
@@ -27,7 +30,7 @@ public class HapCDRServiceImpl implements HapCDRService {
 
     @Override
     @Transactional
-    public ResponseDto<String> processKongCerRequest(KongCerRequest request) {
+    public ResponseDto<Map<String, Object>> processKongCerRequest(KongCerRequest request) {
         try {
             LOGGER.info("Processing KongCerRequest: {}", request);
 
@@ -51,13 +54,20 @@ public class HapCDRServiceImpl implements HapCDRService {
             cpMasterDao.save(cpMaster);
             LOGGER.info("Saved CpMaster successfully");
 
+            // Creating response data
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("engagementTargetKong", engagementTargetKong);
+            responseData.put("workspaceTargetDetails", workspaceTargetDetails);
+            responseData.put("engagementPluginDetail", engagementPluginDetail);
+            responseData.put("cpMaster", cpMaster);
+
             LOGGER.info("All data processed successfully");
 
-            return new ResponseDto<>(HttpStatus.OK.value(), "Kong data saved successfully", null);
+            return new ResponseDto<>(HttpStatus.OK.value(), "Kong data saved successfully", responseData);
 
         } catch (Exception e) {
             LOGGER.error("Error processing KongCerRequest", e);
-            return new ResponseDto<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error processing request", e.getMessage());
+            return new ResponseDto<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error processing request", null);
         }
     }
-}
+        }
