@@ -1,24 +1,29 @@
-public ResponseEntity<Map<String, Object>> processKongCerRequest(@Valid @RequestBody YourRequestDto request, BindingResult result) {
-    // Check for validation errors
-    if (result.hasErrors()) {
-        String errorMessage = result.getFieldErrors()
-                                    .stream()
-                                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                                    .collect(Collectors.joining(", ")); // Collect all validation messages
+package com.example.controller;
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("statusCode", HttpStatus.BAD_REQUEST.value());
-        response.put("message", errorMessage);
+import com.example.dto.ValidationResponseDTO;
+import com.example.dto.ErrorResponseDTO;
+import com.example.service.ValidationService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-        return ResponseEntity.badRequest().body(response);
+@RestController
+@RequestMapping("/api/validate")
+@RequiredArgsConstructor
+public class ValidationController {
+
+    private final ValidationService validationService;
+
+    @GetMapping("/{engagementId}/{workspace}")
+    public ResponseEntity<?> validateEngagement(
+            @PathVariable String engagementId,
+            @PathVariable String workspace) {
+        ValidationResponseDTO response = validationService.validateEngagement(engagementId, workspace);
+        
+        if (!response.isSuccess()) {
+            return ResponseEntity.badRequest().body(new ErrorResponseDTO(response.getErrors()));
+        }
+
+        return ResponseEntity.ok(response);
     }
-
-    // Process request if no validation errors
-    ResponseDto<Map<String, Object>> responseDto = hapCdrService.processKongCerRequest(request);
-
-    Map<String, Object> response = new LinkedHashMap<>();
-    response.put("statusCode", responseDto.getStatusCode());
-    response.put("message", responseDto.getMessage());
-
-    return ResponseEntity.status(responseDto.getStatusCode()).body(response);
 }
