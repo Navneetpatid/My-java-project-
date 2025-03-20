@@ -1,71 +1,50 @@
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
+public List<Map<String, Object>> validateWorkspaceForEngagement(String engagementId, String workspace) {
+    Map<String, Object> libDetails = new HashMap<>();
 
-// Ensure directory exists
-sh "mkdir -p ./resources"
+    // Fetch DP Host
+    String dpHostQuery = """
+        SELECT dm.dp_host 
+        FROM dp_master dm
+        JOIN engagement_target et ON et.engagement_id = ?
+        JOIN workspace_target wt ON wt.workspace = ?
+        WHERE dm.region = et.region 
+        AND dm.environment = wt.environment 
+        LIMIT 1
+    """;
 
-try {
-    // **Step 1: Save JSON Data**
-    def jsonData = [
-        "date": rundate ?: "N/A",
-        "environment": envlist ?: [],
-        "cp": CP ?: "N/A",
-        "workspaces": WorkSpacesList ?: [],
-        "report": contentFile ?: "N/A"
-    ]
-
-    def jsonString = JsonOutput.prettyPrint(JsonOutput.toJson(jsonData))
-    String jsonFilename = "./resources/report_data.json"
-
-    writeFile file: jsonFilename, text: jsonString
-    echo "JSON data successfully written to: ${jsonFilename}"
-
-    // **Step 2: Convert JSON Response to CSV**
-    if (!response) {
-        error("Error: 'response' variable is not defined or empty.")
-    }
-
-    def jsonResponse
     try {
-        jsonResponse = new JsonSlurper().parseText(response)
-    } catch (Exception e) {
-        error("Error parsing JSON response: " + e.getMessage())
+        String dpHost = jdbcTemplate.queryForObject(dpHostQuery, new Object[]{engagementId, workspace}, String.class);
+        libDetails.put("dpHost", dpHost);
+        libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DP Host fetched: " + dpHost);
+        LOGGER.info("DP Host fetched for Engagement ID {}: {}", engagementId, dpHost);
+    } catch (EmptyResultDataAccessException e) {
+        libDetails.put("dpHost", null);
+        libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DP Host not found");
+        LOGGER.warn("DP Host not found for Engagement ID {}", engagementId);
     }
 
-    String csvFilename = "./resources/report_data.csv"
+    // Fetch DMZ Load Balancer
+    String dmzLbQuery = """
+        SELECT dlb.load_balancer 
+        FROM dmz_lb_master dlb
+        JOIN workspace_target wt ON wt.environment = dlb.environment
+        JOIN engagement_target et ON et.region = dlb.region
+        WHERE et.engagement_id = ?
+        AND wt.workspace = ?
+        LIMIT 1
+    """;
 
-    def headers = ["Date", "Environment", "CP", "Workspace_Name", "Service_Count",
-                   "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version", 
-                   "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
-
-    def csvContent = new StringBuilder()
-    csvContent.append(headers.join(",") + "\n")
-
-    jsonResponse.each { item ->
-        WorkSpacesList.each { workspace ->
-            def row = [
-                rundate ?: "N/A",
-                envlist ? envlist.join("|") : "N/A",
-                CP ?: "N/A",
-                workspace ?: "N/A",
-                "N/A", // Placeholder for Service Count
-                item.services_count ?: "N/A",
-                item.rbac_users ?: "N/A",
-                item.kong_version ?: "N/A",
-                item.db_version ?: "N/A",
-                item.system_info?.uname ?: "N/A",
-                item.system_info?.hostname ?: "N/A",
-                item.system_info?.cores ?: "N/A",
-                item.workspaces_count ?: "N/A",
-                item.license?.license_key ?: "N/A"
-            ]
-            csvContent.append(row.join(",") + "\n")
-        }
+    try {
+        String dmzLb = jdbcTemplate.queryForObject(dmzLbQuery, new Object[]{engagementId, workspace}, String.class);
+        libDetails.put("dmz_lb", dmzLb);
+        libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DMZ LB fetched: " + dmzLb);
+        LOGGER.info("DMZ Load Balancer fetched for Engagement ID {}: {}", engagementId, dmzLb);
+    } catch (EmptyResultDataAccessException e) {
+        libDetails.put("dmz_lb", null);
+        libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DMZ LB not found");
+        LOGGER.warn("DMZ LB not found for Engagement ID {}", engagementId);
     }
 
-    writeFile file: csvFilename, text: csvContent.toString()
-    echo "CSV data successfully written to: ${csvFilename}"
-
-} catch (Exception e) {
-    error("Error writing JSON or CSV data: " + e.getMessage())
-        }
+    libDetails.put("success", "true");
+    return Collections.singletonList(libDetails);
+            }
