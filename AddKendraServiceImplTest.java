@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,8 +46,11 @@ public class ValidationService {
             logs.append("Engagement ID validated | ");
 
             // **2. Validate Workspace**
-            Optional<WorkspaceTargetDetails> workspaceOpt =
-                    workspaceTargetDetailsDao.findByEngagementIdAndWorkspace(engagementId, workspace);
+            List<WorkspaceTargetDetails> workspaces = workspaceTargetDetailsDao.findByEngagementId(engagementId);
+            Optional<WorkspaceTargetDetails> workspaceOpt = workspaces.stream()
+                    .filter(w -> w.getWorkspace().equalsIgnoreCase(workspace))
+                    .findFirst();
+
             if (workspaceOpt.isEmpty()) {
                 logs.append("Workspace not found for given Engagement ID | ");
                 response.setSuccess(false);
@@ -92,4 +96,4 @@ public class ValidationService {
             return response;
         }
     }
-}
+                                          }
