@@ -79,6 +79,23 @@ public class HapCDRServiceImpl implements HapCDRService {
                 libDetails.put("logs", libDetails.get("logs") + " | CP Admin URL not found");
             }
 
+            // Fetch DP Host
+            query = """
+                    SELECT dp_host 
+                    FROM dp_master 
+                    WHERE region = (SELECT region FROM engagement_target WHERE engagement_id = ?) 
+                    AND environment = (SELECT environment FROM workspace_target WHERE workspace = ?)
+                    """;
+            try {
+                String dpHost = jdbcTemplate.queryForObject(query, new Object[]{engagementId, workspace}, String.class);
+                libDetails.put("dpHost", dpHost);
+                libDetails.put("logs", libDetails.get("logs") + " | DP Host fetched: " + dpHost);
+                LOGGER.info("DP Host fetched for Engagement ID {}: {}", engagementId, dpHost);
+            } catch (EmptyResultDataAccessException e) {
+                libDetails.put("logs", libDetails.get("logs") + " | DP Host not found");
+                LOGGER.warn("DP Host not found for Engagement ID {}", engagementId);
+            }
+
             // Fetch DMZ Load Balancer
             query = """
                     SELECT load_balancer 
@@ -95,36 +112,13 @@ public class HapCDRServiceImpl implements HapCDRService {
                 libDetails.put("logs", libDetails.get("logs") + " | DMZ Load Balancer not found");
             }
 
-            // Fetch DP Host
-            query = """
-                    SELECT dp_host 
-                    FROM dp_master 
-                    WHERE region = (SELECT region FROM engagement_target WHERE engagement_id = ? LIMIT 1)
-                    AND environment = (SELECT environment FROM workspace_target WHERE workspace = ? LIMIT 1)
-                    """;
-            try {
-                List<Map<String, Object>> dpHostData = jdbcTemplate.queryForList(query, engagementId, workspace);
-
-                if (!dpHostData.isEmpty()) {
-                    libDetails.put("dpHost", dpHostData.get(0).get("dp_host"));
-                    LOGGER.info("DP Host fetched for Engagement ID {}: {}", engagementId, dpHostData.get(0).get("dp_host"));
-                } else {
-                    libDetails.put("logs", libDetails.get("logs") + " | DP Host not found");
-                    LOGGER.warn("DP Host not found for Engagement ID {}", engagementId);
-                }
-            } catch (EmptyResultDataAccessException e) {
-                libDetails.put("dpHost", null);
-                libDetails.put("logs", libDetails.get("logs") + " | DP Host not found");
-                LOGGER.warn("DP Host not found for Engagement ID {}", engagementId);
-            }
-
             libDetails.put("success", "true");
             return libDetails;
 
         } catch (Exception e) {
             libDetails.put("errors", "Database error: " + e.getMessage());
             libDetails.put("logs", libDetails.get("logs") + " | Error: " + e.getMessage());
-            LOGGER.error("Database error occurred: {}", e.getMessage(), e);
+            LOGGER.error("Database error: ", e);
             return libDetails;
         }
     }
