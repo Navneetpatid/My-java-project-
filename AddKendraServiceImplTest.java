@@ -64,6 +64,17 @@ public class HapCDRServiceImpl implements HapCDRService {
 
             LOGGER.info("Workspace {} validated for Engagement ID {}", workspace, engagementId);
 
+            // Fetch DP Host
+query = "SELECT dp_host FROM dp_master WHERE region = (SELECT region FROM engagement_target WHERE engagement_id = ?) AND environment = (SELECT environment FROM workspace_target WHERE workspace = ?)";
+List<Map<String, Object>> dpHostData = jdbcTemplate.queryForList(query, engagementId, workspace);
+
+if (!dpHostData.isEmpty()) {
+    libDetails.put("dpHost", dpHostData.get(0).get("dp_host"));
+    LOGGER.info("DP Host fetched for Engagement ID {}: {}", engagementId, dpHostData.get(0).get("dp_host"));
+} else {
+    libDetails.put("logs", libDetails.get("logs") + " | DP Host not found");
+    LOGGER.warn("DP Host not found for Engagement ID {}", engagementId);
+}
             // Fetch GBGF Data
             query = "SELECT gbgf FROM engagement_target WHERE engagement_id = ?";
             List<Map<String, Object>> gbgfData = jdbcTemplate.queryForList(query, engagementId);
