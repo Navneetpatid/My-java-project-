@@ -1,29 +1,10 @@
-package com.example.controller;
+@Repository
+public interface WorkspaceTargetDetailsDao extends JpaRepository<WorkspaceTargetDetails, WorkspaceTargetId> {
 
-import com.example.dto.ValidationResponseDTO;
-import com.example.dto.ErrorResponseDTO;
-import com.example.service.ValidationService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+    // Fetch all workspaces for a given engagement ID
+    @Query("SELECT w FROM WorkspaceTargetDetails w WHERE w.id.engagementId = :engagementId")
+    List<WorkspaceTargetDetails> findByEngagementId(@Param("engagementId") String engagementId);
 
-@RestController
-@RequestMapping("/api/validate")
-@RequiredArgsConstructor
-public class ValidationController {
-
-    private final ValidationService validationService;
-
-    @GetMapping("/{engagementId}/{workspace}")
-    public ResponseEntity<?> validateEngagement(
-            @PathVariable String engagementId,
-            @PathVariable String workspace) {
-        ValidationResponseDTO response = validationService.validateEngagement(engagementId, workspace);
-        
-        if (!response.isSuccess()) {
-            return ResponseEntity.badRequest().body(new ErrorResponseDTO(response.getErrors()));
-        }
-
-        return ResponseEntity.ok(response);
-    }
+    // Find specific workspace for engagement
+    Optional<WorkspaceTargetDetails> findById(WorkspaceTargetId id);
 }
