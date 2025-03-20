@@ -1,40 +1,23 @@
-@Override
-public ValidationResponseDTO validateEngagement(String engagementId, String workspace) {
-    ValidationResponseDTO response = new ValidationResponseDTO();
-    StringBuilder logs = new StringBuilder();
-    
-    logs.append("Engagement ID validated | ");
+package com.hsbc.hap.cdr.dao;
 
-    // **Step 1: Fetch all workspaces for the Engagement ID**
-    List<String> workspaces = workspaceTargetDetailsDao.findByEngagementId(engagementId)
-            .stream()
-            .map(details -> details.getId().getWorkspace()) // Extract workspace from EmbeddedId
-            .collect(Collectors.toList());
+import com.hsbc.hap.cdr.entity.CpMaster;
+import com.hsbc.hap.cdr.entity.CpMasterId;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-    if (workspaces.isEmpty()) {
-        logs.append("No workspaces found for this Engagement ID | ");
-        response.setSuccess(false);
-        response.setErrors("No workspaces found for this Engagement ID");
-        response.setLogs(logs.toString());
-        return response;
-    }
+import java.util.List;
+import java.util.Optional;
 
-    response.setWorkspace(workspaces);
-    logs.append("Workspaces retrieved | ");
+@Repository
+public interface CpMasterDetailsDao extends JpaRepository<CpMaster, CpMasterId> {
 
-    // **Step 2: Validate the given workspace using EmbeddedId**
-    WorkspaceTargetId workspaceTargetId = new WorkspaceTargetId(engagementId, workspace);
-    Optional<WorkspaceTargetDetails> workspaceOpt = workspaceTargetDetailsDao.findById(workspaceTargetId);
+    // Fetch all CP Masters for a given region
+    @Query("SELECT c FROM CpMaster c WHERE c.id.region = :region")
+    List<CpMaster> findByRegion(@Param("region") String region);
 
-    if (workspaceOpt.isPresent()) {
-        logs.append("Workspace validated successfully | ");
-        response.setSuccess(true);
-    } else {
-        logs.append("Invalid workspace provided | ");
-        response.setSuccess(false);
-        response.setErrors("Invalid workspace for the given Engagement ID");
-    }
-
-    response.setLogs(logs.toString());
-    return response;
+    // Find specific CP Master for region and environment
+    @Query("SELECT c FROM CpMaster c WHERE c.id.region = :region AND c.id.environment = :environment")
+    Optional<CpMaster> findByRegionAndEnvironment(@Param("region") String region, @Param("environment") String environment);
 }
