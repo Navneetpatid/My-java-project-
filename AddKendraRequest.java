@@ -1,23 +1,19 @@
-package com.janaushadhi.adminservice.requestpayload;
+public ResponseEntity<Map<String, Object>> processKongCerRequest(...) {
+    // Check for validation errors
+    if (result.hasErrors()) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("statusCode", HttpStatus.BAD_REQUEST.value());
+        response.put("message", "Validation failed");
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+        return ResponseEntity.badRequest().body(response);
+    }
 
+    // Process request if no validation errors
+    ResponseDto<Map<String, Object>> responseDto = hapCdrService.processKongCerRequest(request);
 
+    Map<String, Object> response = new HashMap<>();
+    response.put("statusCode", responseDto.getStatusCode());
+    response.put("message", responseDto.getMessage());
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class AddKendraRequest {
-    private Long id;
-    private String contactPerson;
-    private String storeCode;
-    private Long pinCode;
-    private Long stateId;
-    private Long districtId;
-    private String kendraAddress;
-    private Short status;
-    private String latitude;
-    private String longitude;
+    return ResponseEntity.status(responseDto.getStatusCode()).body(response);
 }
