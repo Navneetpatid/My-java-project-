@@ -20,4 +20,7 @@ public interface DataRepository extends CrudRepository<CpMaster, String> {
 
     @Query("SELECT e.gbgf FROM EngagementTarget e WHERE e.engagementId = :engagementId")
     String findGbgf(String engagementId);
+
+    @Query("SELECT e.dmzLb FROM EngagementTarget e WHERE e.engagementId = :engagementId")
+    String findDmzLb(String engagementId); // ✅ Added missing field
 }
