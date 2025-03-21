@@ -1,33 +1,53 @@
-// Fetch CP Admin API URL dynamically
-String cpAdminApiQuery = """
-    SELECT cm.cp_admin_api_url 
-    FROM cp_master cm
-    WHERE EXISTS (
-        SELECT 1 
-        FROM engagement_target et
-        JOIN workspace_target wt ON et.engagement_id = wt.engagement_id
-        WHERE et.engagement_id = ? 
-        AND wt.workspace = ?
-        AND et.region = cm.region 
-        AND wt.environment = cm.environment
-    )
+// Fetch DP Host URL
+String dpHostQuery = """
+    SELECT dp_host_url
+    FROM dp_master
+    WHERE region = (SELECT region FROM engagement_target WHERE engagement_id = ?)
+    AND environment = (SELECT environment FROM workspace_target WHERE workspace = ?)
     LIMIT 1
 """;
 
 try {
-    String cpAdminApiUrl = jdbcTemplate.queryForObject(cpAdminApiQuery, new Object[]{engagementId, workspace}, String.class);
-
-    if (cpAdminApiUrl != null) {
-        libDetails.put("cp_admin_api_url", cpAdminApiUrl);
-        libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | Received CP_ADMIN_API_URL: " + cpAdminApiUrl);
-        LOGGER.info("CP Admin API URL fetched for Engagement ID {}: {}", engagementId, cpAdminApiUrl);
-    } else {
-        libDetails.put("cp_admin_api_url", null);
-        libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | CP Admin API URL not found");
-        LOGGER.warn("CP Admin API URL not found for Engagement ID {}", engagementId);
-    }
+    String dpHostUrl = jdbcTemplate.queryForObject(dpHostQuery, new Object[]{engagementId, workspace}, String.class);
+    libDetails.put("dp_host_url", dpHostUrl);
+    libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DP Host URL fetched: " + dpHostUrl);
 } catch (EmptyResultDataAccessException e) {
-    libDetails.put("cp_admin_api_url", null);
-    libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | CP Admin API URL not found");
-    LOGGER.warn("CP Admin API URL not found for Engagement ID {}", engagementId);
+    libDetails.put("dp_host_url", null);
+    libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DP Host URL not found");
+}
+
+// Fetch GBGF
+String gbgfQuery = """
+    SELECT gbgf
+    FROM gbgf_master
+    WHERE region = (SELECT region FROM engagement_target WHERE engagement_id = ?)
+    AND environment = (SELECT environment FROM workspace_target WHERE workspace = ?)
+    LIMIT 1
+""";
+
+try {
+    String gbgf = jdbcTemplate.queryForObject(gbgfQuery, new Object[]{engagementId, workspace}, String.class);
+    libDetails.put("gbgf", gbgf);
+    libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | GBGF fetched: " + gbgf);
+} catch (EmptyResultDataAccessException e) {
+    libDetails.put("gbgf", null);
+    libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | GBGF not found");
+}
+
+// Fetch DMZ Load Balancer
+String dmzLbQuery = """
+    SELECT dmzlb
+    FROM dmz_lb_master
+    WHERE region = (SELECT region FROM engagement_target WHERE engagement_id = ?)
+    AND environment = (SELECT environment FROM workspace_target WHERE workspace = ?)
+    LIMIT 1
+""";
+
+try {
+    String dmzLb = jdbcTemplate.queryForObject(dmzLbQuery, new Object[]{engagementId, workspace}, String.class);
+    libDetails.put("dmzlb", dmzLb);
+    libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DMZ Load Balancer fetched: " + dmzLb);
+} catch (EmptyResultDataAccessException e) {
+    libDetails.put("dmzlb", null);
+    libDetails.put("logs", libDetails.getOrDefault("logs", "") + " | DMZ Load Balancer not found");
 }
