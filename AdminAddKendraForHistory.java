@@ -1,26 +1,49 @@
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-@Repository
-public interface DataRepository extends CrudRepository<CpMaster, String> {
+@Service
+public class DataService {
 
-    @Query("SELECT c.cpAdminApiUrl FROM CpMaster c WHERE c.region = :region AND c.platform = :platform AND c.environment = :environment")
-    String findCpUrl(String region, String platform, String environment);
+    @Autowired
+    private DataRepository dataRepository;
 
-    @Query("SELECT e.mandatoryPlugin FROM EngagementPlugin e WHERE e.engagementId = :engagementId")
-    List<String> findMandatoryPlugins(String engagementId);
+    public Map<String, Object> getApiResponse(String region, String platform, String environment, String engagementId, String workspace) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true); // Default success status
+        response.put("errors", ""); // Default empty error message
+        response.put("logs", ""); // Default empty logs
 
-    @Query("SELECT e.workspace FROM WorkspaceTarget e WHERE e.engagementId = :engagementId")
-    List<String> findWorkspace(String engagementId);
+        try {
+            // Retrieve data from repository
+            String cpUrl = dataRepository.findCpUrl(region, platform, environment);
+            List<String> mandatoryPlugins = dataRepository.findMandatoryPlugins(engagementId);
+            List<String> workspaces = dataRepository.findWorkspace(engagementId);
+            String dpHost = dataRepository.findDpHost(engagementId, workspace);
+            String gbgf = dataRepository.findGbgf(engagementId);
+            String dmzLb = dataRepository.findDmzLb(engagementId);
 
-    @Query("SELECT e.dpHostUrl FROM WorkspaceTarget e WHERE e.engagementId = :engagementId AND e.workspace = :workspace")
-    String findDpHost(String engagementId, String workspace);
+            // Handle null values & add log messages
+            response.put("cp_url", cpUrl != null ? cpUrl : logAndReturn("cp_url Not Found", response));
+            response.put("mandatoryPlugins", mandatoryPlugins != null && !mandatoryPlugins.isEmpty() ? mandatoryPlugins : logAndReturn("mandatoryPlugins Not Found", response));
+            response.put("workspace", workspaces != null && !workspaces.isEmpty() ? workspaces : logAndReturn("workspace Not Found", response));
+            response.put("dpHost", dpHost != null ? dpHost : logAndReturn("dpHost Not Found", response));
+            response.put("gbgf", gbgf != null ? gbgf : logAndReturn("gbgf Not Found", response));
+            response.put("dmz_lb", dmzLb != null ? dmzLb : logAndReturn("dmz_lb Not Found", response));
 
-    @Query("SELECT e.gbgf FROM EngagementTarget e WHERE e.engagementId = :engagementId")
-    String findGbgf(String engagementId);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("errors", e.getMessage());
+            response.put("logs", response.get("logs") + " Error occurred while fetching data.");
+        }
 
-    @Query("SELECT e.dmzLb FROM EngagementTarget e WHERE e.engagementId = :engagementId")
-    String findDmzLb(String engagementId); // ✅ Added missing field
-}
+        return response;
+    }
+
+    private String logAndReturn(String logMessage, Map<String, Object> response) {
+        response.put("logs", response.get("logs") + logMessage + "; ");
+        return null;
+    }
+        }
