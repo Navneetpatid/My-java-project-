@@ -1,60 +1,66 @@
-@Repository
-public class EngagementRepository {
+@Service
+public class EngagementService {
 
     @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private EngagementRepository engagementRepository;
 
-    // Fetch Engagement Data
-    public Map<String, Object> getEngagementData(String engagementId) {
-        String query = "SELECT engagement_id, gbgf FROM engagement_target WHERE engagement_id = ?";
-        List<Map<String, Object>> result = jdbcTemplate.queryForList(query, engagementId);
-        return result.isEmpty() ? null : result.get(0);
-    }
+    public List<Map<String, Object>> validateWorkspaceForEngagement(String engagementId, String workspace) {
+        Map<String, Object> response = new HashMap<>();
+        StringBuilder logMessage = new StringBuilder();
+        StringBuilder errorMessage = new StringBuilder();
 
-    // Fetch Workspace Data
-    public Map<String, Object> getWorkspaceData(String engagementId, String workspace) {
-        String query = "SELECT workspace, dp_host_url FROM workspace_target WHERE engagement_id = ? AND workspace = ?";
-        List<Map<String, Object>> result = jdbcTemplate.queryForList(query, engagementId, workspace);
-        return result.isEmpty() ? null : result.get(0);
-    }
+        // Default values
+        response.put("success", "true");
+        response.put("gbgf", "");
+        response.put("workspace", "");
+        response.put("dpHost", "");
+        response.put("mandatoryPlugins", new ArrayList<>());
+        response.put("cp_admin_api_url", "");
+        response.put("dp_host_url", "");
 
-    // Fetch Mandatory Plugins
-    public List<String> getMandatoryPlugins(String engagementId) {
-        String query = "SELECT mandatory_plugin FROM engagement_plugin WHERE engagement_id = ?";
-        return jdbcTemplate.queryForList(query, String.class, engagementId);
-    }
-
-    // Fetch DP Host URL
-    public String getDpHostUrl(String engagementId, String workspace) {
-        String query = "SELECT dp_host_url FROM workspace_target WHERE engagement_id = ? AND workspace = ? LIMIT 1";
-        try {
-            return jdbcTemplate.queryForObject(query, new Object[]{engagementId, workspace}, String.class);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
+        // Fetch Engagement Data
+        Map<String, Object> engagementData = engagementRepository.getEngagementData(engagementId);
+        if (engagementData == null) {
+            errorMessage.append("Engagement ID not validated | ");
+            logMessage.append("Engagement ID not found | ");
+        } else {
+            response.put("gbgf", engagementData.getOrDefault("gbgf", ""));
         }
-    }
 
-    // Fetch CP Admin API URL
-    public String getCpAdminApiUrl(String engagementId, String workspace) {
-        String query = """
-            SELECT cm.cp_admin_api_url
-            FROM cp_master cm
-            WHERE EXISTS (
-                SELECT 1
-                FROM engagement_target et
-                JOIN workspace_target wt ON et.engagement_id = wt.engagement_id
-                WHERE et.engagement_id = ?
-                AND wt.workspace = ?
-                AND et.region = cm.region
-                AND wt.environment = cm.environment
-            )
-            LIMIT 1
-            """;
-
-        try {
-            return jdbcTemplate.queryForObject(query, new Object[]{engagementId, workspace}, String.class);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
+        // Fetch Workspace Data
+        Map<String, Object> workspaceData = engagementRepository.getWorkspaceData(engagementId, workspace);
+        if (workspaceData == null) {
+            errorMessage.append("Workspace not validated | ");
+            logMessage.append("Workspace not found | ");
+        } else {
+            response.put("workspace", workspace);
+            response.put("dpHost", workspaceData.getOrDefault("dp_host_url", ""));
         }
+
+        // Fetch Mandatory Plugins
+        List<String> mandatoryPlugins = engagementRepository.getMandatoryPlugins(engagementId);
+        response.put("mandatoryPlugins", mandatoryPlugins.isEmpty() ? new ArrayList<>() : mandatoryPlugins);
+
+        // Fetch DP Host URL
+        String dpHostUrl = engagementRepository.getDpHostUrl(engagementId, workspace);
+        response.put("dp_host_url", dpHostUrl != null ? dpHostUrl : "");
+        if (dpHostUrl == null) logMessage.append("DP Host URL not found | ");
+
+        // Fetch CP Admin API URL
+        String cpAdminApiUrl = engagementRepository.getCpAdminApiUrl(engagementId, workspace);
+        response.put("cp_admin_api_url", cpAdminApiUrl != null ? cpAdminApiUrl : "");
+        if (cpAdminApiUrl == null) logMessage.append("CP Admin API URL not found | ");
+
+        // Trim logs and errors
+        if (logMessage.length() > 0) {
+            response.put("logs", logMessage.substring(0, logMessage.length() - 3));
+        }
+
+        if (errorMessage.length() > 0) {
+            response.put("errors", errorMessage.substring(0, errorMessage.length() - 3));
+            response.put("success", "false");
+        }
+
+        return Collections.singletonList(response);
     }
-}
+            }
