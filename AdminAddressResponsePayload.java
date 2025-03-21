@@ -1,19 +1,29 @@
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
 
-@RestController
-@RequestMapping("/api")
-public class DataController {
+@Repository
+public interface DataRepository extends CrudRepository<CpMaster, String> {
 
-    @Autowired
-    private DataService dataService;
+    @Query("SELECT c.cpAdminApiUrl FROM CpMaster c")
+    String findCpUrl(); // Assuming there's a single CP URL
 
-    @GetMapping("/retrieve")
-    public ApiResponse getData(
-            @RequestParam String region,
-            @RequestParam String platform,
-            @RequestParam String environment,
-            @RequestParam String engagementId) {
-        return dataService.getData(region, platform, environment, engagementId);
-    }
+    @Query("SELECT e.mandatoryPlugin FROM EngagementPlugin e WHERE e.engagementId = :engagementId")
+    List<String> findMandatoryPlugins(String engagementId);
+
+    @Query("SELECT e.workspace FROM WorkspaceTarget e WHERE e.engagementId = :engagementId")
+    List<String> findWorkspace(String engagementId);
+
+    @Query("SELECT e.dpHostUrl FROM WorkspaceTarget e WHERE e.engagementId = :engagementId AND e.workspace = :workspace")
+    String findDpHost(String engagementId, String workspace);
+
+    @Query("SELECT e.gbgf FROM EngagementTarget e WHERE e.engagementId = :engagementId")
+    String findGbgf(String engagementId);
+
+    @Query("SELECT e.dmzLb FROM EngagementTarget e WHERE e.engagementId = :engagementId")
+    String findDmzLb(String engagementId);
+
+    @Query("SELECT e.logs FROM EngagementTarget e WHERE e.engagementId = :engagementId")
+    String findLogs(String engagementId);
 }
