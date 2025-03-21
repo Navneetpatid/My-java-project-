@@ -1,75 +1,60 @@
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
+@Repository
+public class EngagementRepository {
 
-// Ensure directory exists
-sh "mkdir -p ./resources"
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-try {
-    // **Step 1: Load JSON Template from Library**
-    def jsonTemplate = libraryResource('path/to/your/json/template.json')
-    def jsonTemplateData = new JsonSlurper().parseText(jsonTemplate)
-
-    // **Step 2: Save JSON Data**
-    def jsonData = [
-        "date": rundate ?: jsonTemplateData.date ?: "N/A",
-        "environment": envlist ?: jsonTemplateData.environment ?: [],
-        "cp": CP ?: jsonTemplateData.cp ?: "N/A",
-        "workspaces": WorkSpacesList ?: jsonTemplateData.workspaces ?: [],
-        "report": contentFile ?: jsonTemplateData.report ?: "N/A"
-    ]
-
-    def jsonString = JsonOutput.prettyPrint(JsonOutput.toJson(jsonData))
-    String jsonFilename = "./resources/report_data.json"
-
-    writeFile file: jsonFilename, text: jsonString
-    echo "JSON data successfully written to: ${jsonFilename}"
-
-    // **Step 3: Load and Convert JSON Response to CSV**
-    if (!response) {
-        error("Error: 'response' variable is not defined or empty.")
+    // Fetch Engagement Data
+    public Map<String, Object> getEngagementData(String engagementId) {
+        String query = "SELECT engagement_id, gbgf FROM engagement_target WHERE engagement_id = ?";
+        List<Map<String, Object>> result = jdbcTemplate.queryForList(query, engagementId);
+        return result.isEmpty() ? null : result.get(0);
     }
 
-    def jsonResponse
-    try {
-        jsonResponse = new JsonSlurper().parseText(response)
-    } catch (Exception e) {
-        error("Error parsing JSON response: " + e.getMessage())
+    // Fetch Workspace Data
+    public Map<String, Object> getWorkspaceData(String engagementId, String workspace) {
+        String query = "SELECT workspace, dp_host_url FROM workspace_target WHERE engagement_id = ? AND workspace = ?";
+        List<Map<String, Object>> result = jdbcTemplate.queryForList(query, engagementId, workspace);
+        return result.isEmpty() ? null : result.get(0);
     }
 
-    String csvFilename = "./resources/report_data.csv"
+    // Fetch Mandatory Plugins
+    public List<String> getMandatoryPlugins(String engagementId) {
+        String query = "SELECT mandatory_plugin FROM engagement_plugin WHERE engagement_id = ?";
+        return jdbcTemplate.queryForList(query, String.class, engagementId);
+    }
 
-    def headers = ["Date", "Environment", "CP", "Workspace_Name", "Service_Count",
-                   "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version", 
-                   "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
-
-    def csvContent = new StringBuilder()
-    csvContent.append(headers.join(",") + "\n")
-
-    jsonResponse.each { item ->
-        WorkSpacesList.each { workspace ->
-            def row = [
-                rundate ?: "N/A",
-                envlist ? envlist.join("|") : "N/A",
-                CP ?: "N/A",
-                workspace ?: "N/A",
-                "N/A", // Placeholder for Service Count
-                item.services_count ?: "N/A",
-                item.rbac_users ?: "N/A",
-                item.kong_version ?: "N/A",
-                item.db_version ?: "N/A",
-                item.system_info?.uname ?: "N/A",
-                item.system_info?.hostname ?: "N/A",
-                item.system_info?.cores ?: "N/A",
-                item.workspaces_count ?: "N/A",
-                item.license?.license_key ?: "N/A"
-            ]
-            csvContent.append(row.join(",") + "\n")
+    // Fetch DP Host URL
+    public String getDpHostUrl(String engagementId, String workspace) {
+        String query = "SELECT dp_host_url FROM workspace_target WHERE engagement_id = ? AND workspace = ? LIMIT 1";
+        try {
+            return jdbcTemplate.queryForObject(query, new Object[]{engagementId, workspace}, String.class);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         }
     }
 
-    writeFile file: csvFilename, text: csvContent.toString()
-    echo "CSV data successfully written to: ${csvFilename}"
+    // Fetch CP Admin API URL
+    public String getCpAdminApiUrl(String engagementId, String workspace) {
+        String query = """
+            SELECT cm.cp_admin_api_url
+            FROM cp_master cm
+            WHERE EXISTS (
+                SELECT 1
+                FROM engagement_target et
+                JOIN workspace_target wt ON et.engagement_id = wt.engagement_id
+                WHERE et.engagement_id = ?
+                AND wt.workspace = ?
+                AND et.region = cm.region
+                AND wt.environment = cm.environment
+            )
+            LIMIT 1
+            """;
 
-} catch (Exception e) {
-    error("Error writing JSON or CSV data: " + e.getMessage())
+        try {
+            return jdbcTemplate.queryForObject(query, new Object[]{engagementId, workspace}, String.class);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         }
+    }
+}
