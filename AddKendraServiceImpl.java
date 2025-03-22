@@ -30,6 +30,17 @@ public class ValidationService {
         StringBuilder logs = new StringBuilder();
         StringBuilder errors = new StringBuilder();
 
+        // Initialize all fields in the response
+        response.put("success", false); // Default to false, will be updated if validation passes
+        response.put("gbgf", null);
+        response.put("workspace", null);
+        response.put("dpHost", null);
+        response.put("mandatoryPlugins", new ArrayList<>());
+        response.put("cp_url", null);
+        response.put("dmz_lb", null);
+        response.put("logs", "");
+        response.put("errors", "");
+
         logs.append("HAP Database Validation Started");
 
         // Validate Engagement
@@ -37,7 +48,6 @@ public class ValidationService {
         if (engagement == null) {
             errors.append("Engagement ID not validated | ");
             logs.append("Engagement ID not found | ");
-            response.put("success", false);
         } else {
             response.put("gbgf", engagement.getGbgf());
             logs.append("Engagement ID validated | ");
@@ -49,7 +59,6 @@ public class ValidationService {
         if (workspaceTarget == null) {
             errors.append("Workspace not validated | ");
             logs.append("Workspace not found | ");
-            response.put("success", false);
         } else {
             response.put("workspace", workspaceTarget.getId().getWorkspace());
             response.put("dpHost", workspaceTarget.getDpHost());
@@ -68,7 +77,6 @@ public class ValidationService {
         } else {
             errors.append("No mandatory plugins found | ");
             logs.append("No mandatory plugins found | ");
-            response.put("mandatoryPlugins", new ArrayList<>());
         }
 
         // Fetch CP Admin API URL
@@ -81,12 +89,10 @@ public class ValidationService {
             } else {
                 errors.append("CP Admin API URL not found | ");
                 logs.append("CP Admin API URL not found | ");
-                response.put("cp_url", "");
             }
         } else {
             errors.append("Workspace not validated, cannot fetch CP Admin API URL | ");
             logs.append("Workspace not validated, cannot fetch CP Admin API URL | ");
-            response.put("cp_url", "");
         }
 
         // Fetch DMZ Load Balancer
@@ -99,19 +105,17 @@ public class ValidationService {
             } else {
                 errors.append("DMZ Load Balancer not found | ");
                 logs.append("DMZ Load Balancer not found | ");
-                response.put("dmz_lb", "");
             }
         } else {
             errors.append("Workspace not validated, cannot fetch DMZ Load Balancer | ");
             logs.append("Workspace not validated, cannot fetch DMZ Load Balancer | ");
-            response.put("dmz_lb", "");
         }
 
         // Finalize response
         response.put("logs", logs.toString());
         response.put("errors", errors.toString());
-        response.put("success", errors.length() == 0);
+        response.put("success", errors.length() == 0); // Set success to true if no errors
 
         return response;
     }
-}
+            }
