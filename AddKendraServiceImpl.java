@@ -1,160 +1,117 @@
-import groovy.json.JsonSlurper
+package com.example.services;
 
-def call(Map config) {
-    this.config = config
-    node(gcrNode) {
-        logger = new Logger()
-        echo "Pipeline execution started"
+import com.example.entities.*;
+import com.example.repositories.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-        miEvent = new MiEvent()
-        splunkRequestBody = new SplunkRequestBody()
+import java.util.*;
 
-        stage('Checkout') {
-            try {
-                cleanWs()
-                gitCheckout()
-                sh 'echo "DATE,ENVIRONMENT,CP,DATAPLANE,STATUS" > email_data.txt'
+@Service
+public class ValidationService {
 
-                def date = new Date()
-                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy")
-                rundate = sdf.format(date)
-                echo "rundate:${rundate}"
+    @Autowired
+    private EngagementTargetRepository engagementTargetRepository;
 
-                def environment = "dev-HK,dev-UK,ppd-HK,ppd-UK,prd-HK,prd-UK"
-                buildno = env.BUILD_NUMBER
-                echo "buildno:${buildno}"
+    @Autowired
+    private WorkspaceTargetDetailsRepository workspaceTargetDetailsRepository;
 
-                def enlist = environment.split(',') as List
+    @Autowired
+    private EngagementPluginDetailsRepository engagementPluginDetailsRepository;
 
-                stage("Report Generation Process") {
-                    try {
-                        def contentFile = "Workspace Name, Service Count, CP\n"
-                        def counterworkspace = 0
+    @Autowired
+    private CpMasterRepository cpMasterRepository;
 
-                        for (def j in enlist) {
-                            String DataPlanename = "GKE-GCP"
-                            def configDetailsGKEYaml = readYaml text: libraryResource("GKE.yaml")
-                            writeFile file: 'GKE.yaml', text: libraryResource('../resources/GKE.yaml')
-                            def configurationGKEYML = readYaml file: "resources/GKE.yaml"
+    @Autowired
+    private DmzLbMasterRepository dmzLbMasterRepository;
 
-                            ENV_TYPE = j.trim()
-                            echo "${ENV_TYPE}"
+    public Map<String, Object> validateWorkspaceForEngagement(String engagementId, String workspace) {
+        Map<String, Object> response = new HashMap<>();
+        StringBuilder logs = new StringBuilder();
+        StringBuilder errors = new StringBuilder();
 
-                            def configGKEYML = configurationGKEYML."${ENV_TYPE}"
-                            CP = configGKEYML.CP
-                            DP_SHARED = configGKEYML.DP_Shared
+        logs.append("HAP Database Validation Started");
 
-                            if (!j.equals("sbox-HK")) {
-                                DP_CTO = configGKEYML.DP_cto
-                                DP_ET = configGKEYML.DP_et
-                                DP_GDT = configGKEYML.DP_gdt
-                            }
-
-                            if (workspace_name == "ALL") {
-                                WorkSpacesList.clear()
-                                getworkspaces(CP)
-
-                                for (i = 0; i < WorkSpacesList.size(); i++) {
-                                    if (WorkSpacesList[i].contains("-")) {
-                                        try {
-                                            counterworkspace++
-                                            echo "Processing workspace ${WorkSpacesList[i]} (${counterworkspace})"
-                                            def servicecount = getworkspaceservices(CP, WorkSpacesList[i])
-                                            contentFile += "${WorkSpacesList[i]},${servicecount},CP\n"
-                                        } catch (Exception e) {
-                                            error("Error fetching workspace services: ${e.getMessage()}")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Save workspace report
-                        String workspaceReport = "Report/Workspace_Report.csv"
-                        writeFile file: workspaceReport, text: contentFile
-                        echo "Workspace report generated: ${workspaceReport}"
-
-                        // Process license reports
-                        def licenseFiles = [
-                            "dev-HK_license.json", "dev-UK_license.json",
-                            "ppd-HK_license.json", "ppd-UK_license.json"
-                        ]
-
-                        licenseFiles.each { filePath ->
-                            def jsonData = loadJsonFile(filePath)
-                            if (jsonData) {
-                                convertJsonToCsv(jsonData, filePath)
-                            } else {
-                                echo "Skipping ${filePath} due to errors."
-                            }
-                        }
-
-                        // Send Email
-                        def licenseReport = "Report/dev-HK_license.csv" // Assuming this is generated
-                        def emailMessage = """
-                            Hi Team,
-
-                            Please find attached reports for Workspace and License data.
-
-                            Best regards,
-                        """
-
-                        emailext(
-                            to: "navneet.patidar@noexternalmail.hsbc.com",
-                            subject: "Admin API Pipeline & License Report",
-                            attachLog: false,
-                            attachmentsPattern: "Report/*.csv",
-                            body: emailMessage
-                        )
-
-                        echo "Email sent successfully with reports"
-
-                    } catch (Exception e) {
-                        error("Error during report generation: ${e.getMessage()}")
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Function to load JSON
-def loadJsonFile(filePath) {
-    try {
-        def fileContent = new File(filePath).text
-        return new JsonSlurper().parseText(fileContent)
-    } catch (Exception e) {
-        echo "Error reading JSON file: ${e.message}"
-        return null
-    }
-}
-
-// Function to convert JSON to CSV
-def convertJsonToCsv(jsonData, filePath) {
-    try {
-        if (jsonData) {
-            def environment = new File(filePath).getName().replace(".json", "")
-
-            def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version",
-                           "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
-
-            def values = [
-                environment, jsonData.services_count, jsonData.rbac_users,
-                jsonData.kong_version, jsonData.db_version,
-                jsonData.system_info.uname, jsonData.system_info.hostname,
-                jsonData.system_info.cores, jsonData.workspaces_count,
-                jsonData.containsKey("license") ? jsonData.license.license_key : "N/A"
-            ]
-
-            def csvContent = headers.join(",") + "\n" + values.join(",")
-
-            def csvFilePath = "Report/" + filePath.replace(".json", ".csv")
-            writeFile file: csvFilePath, text: csvContent
-            echo "CSV report created: ${csvFilePath}"
+        // Validate Engagement
+        EngagementTarget engagement = engagementTargetRepository.findById(engagementId).orElse(null);
+        if (engagement == null) {
+            errors.append("Engagement ID not validated | ");
+            logs.append("Engagement ID not found | ");
+            response.put("success", false);
         } else {
-            echo "Skipping JSON conversion due to null data."
+            response.put("gbgf", engagement.getGbgf());
+            logs.append("Engagement ID validated | ");
         }
-    } catch (Exception e) {
-        echo "Error converting JSON to CSV: ${e.message}"
+
+        // Validate Workspace
+        WorkspaceTargetDetails workspaceTarget = workspaceTargetDetailsRepository
+                .findById_EngagementIdAndId_Workspace(engagementId, workspace);
+        if (workspaceTarget == null) {
+            errors.append("Workspace not validated | ");
+            logs.append("Workspace not found | ");
+            response.put("success", false);
+        } else {
+            response.put("workspace", workspaceTarget.getId().getWorkspace());
+            response.put("dpHost", workspaceTarget.getDpHost());
+            logs.append("Workspace validated | ");
+        }
+
+        // Fetch Mandatory Plugins
+        List<EngagementPluginDetails> plugins = engagementPluginDetailsRepository.findById_EngagementId(engagementId);
+        List<String> mandatoryPlugins = new ArrayList<>();
+        if (plugins != null && !plugins.isEmpty()) {
+            for (EngagementPluginDetails plugin : plugins) {
+                mandatoryPlugins.add(plugin.getMandatoryPlugin());
+            }
+            response.put("mandatoryPlugins", mandatoryPlugins);
+            logs.append("Mandatory plugins fetched | ");
+        } else {
+            errors.append("No mandatory plugins found | ");
+            logs.append("No mandatory plugins found | ");
+            response.put("mandatoryPlugins", new ArrayList<>());
+        }
+
+        // Fetch CP Admin API URL
+        if (workspaceTarget != null) {
+            CpMaster cpMaster = cpMasterRepository.findById_RegionAndId_Environment(
+                    workspaceTarget.getEnvironment(), workspaceTarget.getEnvironment());
+            if (cpMaster != null) {
+                response.put("cp_url", cpMaster.getCpAdminApiUrl());
+                logs.append("CP Admin API URL fetched | ");
+            } else {
+                errors.append("CP Admin API URL not found | ");
+                logs.append("CP Admin API URL not found | ");
+                response.put("cp_url", "");
+            }
+        } else {
+            errors.append("Workspace not validated, cannot fetch CP Admin API URL | ");
+            logs.append("Workspace not validated, cannot fetch CP Admin API URL | ");
+            response.put("cp_url", "");
+        }
+
+        // Fetch DMZ Load Balancer
+        if (workspaceTarget != null) {
+            DmzLbMaster dmzLbMaster = dmzLbMasterRepository.findByEnvironmentAndRegion(
+                    workspaceTarget.getEnvironment(), workspaceTarget.getRegion());
+            if (dmzLbMaster != null) {
+                response.put("dmz_lb", dmzLbMaster.getLoadBalancer());
+                logs.append("DMZ Load Balancer fetched | ");
+            } else {
+                errors.append("DMZ Load Balancer not found | ");
+                logs.append("DMZ Load Balancer not found | ");
+                response.put("dmz_lb", "");
+            }
+        } else {
+            errors.append("Workspace not validated, cannot fetch DMZ Load Balancer | ");
+            logs.append("Workspace not validated, cannot fetch DMZ Load Balancer | ");
+            response.put("dmz_lb", "");
+        }
+
+        // Finalize response
+        response.put("logs", logs.toString());
+        response.put("errors", errors.toString());
+        response.put("success", errors.length() == 0);
+
+        return response;
     }
-                    }
+}
