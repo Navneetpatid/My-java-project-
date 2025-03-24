@@ -1,28 +1,82 @@
-package com.hsbc.hap.cer.dao;
+package com.hsbc.hap.cer.service.impl;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import com.hsbc.hap.cer.dao.CpMasterDetailsDao;
+import com.hsbc.hap.cer.dao.DmzLibMasterDao;
+import com.hsbc.hap.cer.model.WorkspaceTarget;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-@Repository
-public interface CpMasterDetailsDao extends JpaRepository<CpMaster, CpMasterId> {
+import java.util.HashMap;
+import java.util.Map;
 
-    /**
-     * Finds CP Admin API URL by engagement ID and workspace
-     * Matches the exact SQL query from requirements
-     * 
-     * @param engagementId The engagement ID to search for
-     * @param workspace The workspace name to filter by
-     * @return The CP Admin API URL or null if not found
-     */
-    @Query(value = "SELECT c.cp_admin_api_url FROM cp_master c " +
-                   "WHERE (c.region, c.environment) IN " +
-                   "(SELECT a.region, b.environment FROM engagement_target a " +
-                   "JOIN workspace_target b ON a.engagement_id = b.engagement_id " +
-                   "WHERE a.engagement_id = :engagementId AND b.workspace = :workspace)", 
-           nativeQuery = true)
-    String findAdminApiUrlByEngagementAndWorkspace(
-            @Param("engagementId") String engagementId,
-            @Param("workspace") String workspace);
+@Service
+public class MapCERServiceImpl {
+
+    private final CpMasterDetailsDao cpMasterDetailsDao;
+    private final DmzLibMasterDao dmzLibMasterDao;
+    
+    @Autowired
+    public MapCERServiceImpl(CpMasterDetailsDao cpMasterDetailsDao, 
+                           DmzLibMasterDao dmzLibMasterDao) {
+        this.cpMasterDetailsDao = cpMasterDetailsDao;
+        this.dmzLibMasterDao = dmzLibMasterDao;
+    }
+
+    public Map<String, Object> validateWorkspaceForEngagement(WorkspaceTarget workspaceTarget) {
+        Map<String, Object> response = new HashMap<>();
+        StringBuilder errors = new StringBuilder();
+        StringBuilder logs = new StringBuilder();
+
+        // Fetch CP Admin API URL
+        if (workspaceTarget != null) {
+            try {
+                String apiUrl = cpMasterDetailsDao.findAdminApiUrlByEngagementAndWorkspace(
+                    workspaceTarget.getEngagementId(), 
+                    workspaceTarget.getWorkspace());
+                
+                if (StringUtils.hasText(apiUrl)) {
+                    response.put("cp_admin_api_url", apiUrl);
+                    logs.append("CP Admin API URL fetched ! ");
+                } else {
+                    errors.append("CP Admin API URL not found ! ");
+                    logs.append("CP Admin API URL not found ! ");
+                }
+            } catch (Exception e) {
+                errors.append("Error fetching CP Admin API URL ! ");
+                logs.append("Database error occurred while fetching CP Admin API URL ! ");
+            }
+        } else {
+            errors.append("Workspace not validated, cannot fetch CP Admin API URL ! ");
+            logs.append("Workspace not validated, cannot fetch CP Admin API URL ! ");
+        }
+
+        // Fetch DMZ Load Balancer
+        if (workspaceTarget != null) {
+            try {
+                DmzLibMaster dmzLibMaster = dmzLibMasterDao.findByEnvironmentAndRegion(
+                    workspaceTarget.getEnvironment(), 
+                    workspaceTarget.getRegion());
+                
+                if (dmzLibMaster != null) {
+                    response.put("dmz_lb", dmzLibMaster.getLoadBalancer());
+                    logs.append("DMZ Load Balancer fetched ! ");
+                } else {
+                    errors.append("DMZ Load Balancer not found ! ");
+                    logs.append("DMZ Load Balancer not found ! ");
+                }
+            } catch (Exception e) {
+                errors.append("Error fetching DMZ Load Balancer ! ");
+                logs.append("Database error occurred while fetching DMZ Load Balancer ! ");
+            }
+        }
+
+        // Add errors and logs to response if they exist
+        if (errors.length() > 0) {
+            response.put("errors", errors.toString());
+        }
+        response.put("logs", logs.toString());
+        
+        return response;
+    }
 }
