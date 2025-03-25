@@ -1,28 +1,33 @@
--- First create a table for the load balancer data
-CREATE TABLE IF NOT EXISTS public.load_balancers (
+-- DMZ Load Balancer Master Table (without audit fields)
+CREATE TABLE IF NOT EXISTS public.dmz_lb_master (
     id integer NOT NULL,
     load_balancer character varying(150) COLLATE pg_catalog."default" NOT NULL,
     environment character varying(20) COLLATE pg_catalog."default" NOT NULL,
     region character varying(20) COLLATE pg_catalog."default" NOT NULL,
-    CONSTRAINT load_balancers_pkey PRIMARY KEY (id)
+    CONSTRAINT dmz_lb_master_pkey PRIMARY KEY (id),
+    CONSTRAINT dmz_lb_unique_constraint UNIQUE (load_balancer, environment, region)
 );
 
--- Then you could query it with joins to your other tables
+-- Insert the sample data (from your JSON) into dmz_lb_master
+INSERT INTO public.dmz_lb_master 
+(id, load_balancer, environment, region)
+VALUES
+(1, 'hap-dev-api-gw-wk.systems.uk.hsbc', 'DEV', 'UK'),
+(2, 'hap-dev-api-gw-tk.hk.hsbc', 'DEV', 'HK'),
+(3, 'hap-preprod-api-gw-wk.systems.uk.hsbc', 'PPD', 'UK'),
+(4, 'hap-preprod-api-gw-tk.hk.hsbc', 'PPD', 'HK'),
+(5, 'hap-api-gw.systems.uk.hsbc', 'PRD', 'UK'),
+(6, 'hap-api-gw-tk.hk.hsbc', 'PRD', 'HK'),
+(7, 'hap-api-gw-sk.hk.hsbc', 'PRD', 'HK');
+
+-- Create a view that matches your original JSON structure
+CREATE OR REPLACE VIEW public.dmz_lb_master_view AS
 SELECT 
-    et.engagement_id,
-    et.region as engagement_region,
-    lb.region as lb_region,
-    lb.load_balancer,
-    lb.environment,
-    wt.workspace
+    id,
+    load_balancer,
+    environment,
+    region
 FROM 
-    public.engagement_target et
-JOIN 
-    public.workspace_target wt ON et.engagement_id = wt.engagement_id
-JOIN 
-    public.load_balancers lb ON wt.environment = lb.environment AND et.region = lb.region
-WHERE 
-    wt.environment = 'DEV'  -- Example filter
+    public.dmz_lb_master
 ORDER BY 
-    et.engagement_id
-NOT NULL et.region, lb.load_balancer, wt.workspace;
+    environment, region, id;
