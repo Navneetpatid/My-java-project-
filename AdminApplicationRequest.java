@@ -1,123 +1,105 @@
-import groovy.json.JsonSlurper
+public class CERGetResponse {
+    private String success;
+    private String errors;
+    private String workspace;
+    private String cpUrl;
+    private String mandatoryPlugins;
+    private String dpHost;
+    private String gbgf;
+    private String dmzLb;
+    private String logs;
 
-// Main function to process JSON and send email
-def processJsonAndSendEmail() {
-    def workspacePath = new File("${env.WORKSPACE}")
-    
-    if (!workspacePath.exists() || !workspacePath.isDirectory()) {
-        error "Workspace directory not found: ${env.WORKSPACE}"
+    // Constructor
+    public CERGetResponse() {
+        // Initialize with default values if needed
     }
 
-    // List all JSON files
-    def jsonFiles = workspacePath.listFiles().findAll { it.name.endsWith(".json") }
+    // Getters and Setters
 
-    if (jsonFiles.isEmpty()) {
-        println "No JSON files found in workspace."
-        return
+    public String getSuccess() {
+        return success;
     }
 
-    jsonFiles.each { file ->
-        try {
-            def jsonData = loadJsonFile(file.absolutePath)
-            if (jsonData == null || jsonData.isEmpty()) {
-                println "Skipping empty or invalid JSON file: ${file.name}"
-            } else {
-                println "Processing JSON file: ${file.name}"
-                def csvFileName = file.name.replace(".json", ".csv")
-                convertJsonToCsv(jsonData, csvFileName)
-            }
-        } catch (Exception e) {
-            println "Error processing JSON file ${file.name}: ${e.message}"
-        }
+    public void setSuccess(String success) {
+        this.success = success;
     }
 
-    // Send email with generated CSV
-    sendEmailWithCsv()
+    public String getErrors() {
+        return errors;
+    }
+
+    public void setErrors(String errors) {
+        this.errors = errors;
+    }
+
+    public String getWorkspace() {
+        return workspace;
+    }
+
+    public void setWorkspace(String workspace) {
+        this.workspace = workspace;
+    }
+
+    public String getCpUrl() {
+        return cpUrl;
+    }
+
+    public void setCpUrl(String cpUrl) {
+        this.cpUrl = cpUrl;
+    }
+
+    public String getMandatoryPlugins() {
+        return mandatoryPlugins;
+    }
+
+    public void setMandatoryPlugins(String mandatoryPlugins) {
+        this.mandatoryPlugins = mandatoryPlugins;
+    }
+
+    public String getDpHost() {
+        return dpHost;
+    }
+
+    public void setDpHost(String dpHost) {
+        this.dpHost = dpHost;
+    }
+
+    public String getGbgf() {
+        return gbgf;
+    }
+
+    public void setGbgf(String gbgf) {
+        this.gbgf = gbgf;
+    }
+
+    public String getDmzLb() {
+        return dmzLb;
+    }
+
+    public void setDmzLb(String dmzLb) {
+        this.dmzLb = dmzLb;
+    }
+
+    public String getLogs() {
+        return logs;
+    }
+
+    public void setLogs(String logs) {
+        this.logs = logs;
+    }
+
+    @Override
+    public String toString() {
+        return "CERGetResponse{" +
+                "success='" + success + '\'' +
+                ", errors='" + errors + '\'' +
+                ", workspace='" + workspace + '\'' +
+                ", cpUrl='" + cpUrl + '\'' +
+                ", mandatoryPlugins='" + mandatoryPlugins + '\'' +
+                ", dpHost='" + dpHost + '\'' +
+                ", gbgf='" + gbgf + '\'' +
+                ", dmzLb='" + dmzLb + '\'' +
+                ", logs='" + logs + '\'' +
+                '}';
+    }
 }
-
-// Function to load JSON file
-def loadJsonFile(String filePath) {
-    def jsonFile = new File(filePath)
-    if (!jsonFile.exists()) {
-        println "File not found: ${filePath}"
-        return null
-    }
-    
-    try {
-        return new JsonSlurper().parseText(jsonFile.text)
-    } catch (Exception e) {
-        println "Error parsing JSON file ${filePath}: ${e.message}"
-        return null
-    }
-}
-
-// Function to convert JSON to CSV
-def convertJsonToCsv(jsonData, String csvFileName) {
-    def csvFilePath = "${env.WORKSPACE}/${csvFileName}"
-    def csvContent = new StringBuilder()
-
-    if (jsonData.isEmpty()) {
-        println "Skipping CSV conversion, JSON data is empty."
-        return
-    }
-
-    // Extract environment name from file
-    def environment = csvFileName.replace(".csv", "")
-
-    // Extract required values
-    def servicesCount = jsonData.services_count
-    def rbacUsers = jsonData.rbac_users
-    def kongVersion = jsonData.kong_version
-    def dbVersion = jsonData.db_version
-    def uname = jsonData.system_info.uname
-    def hostname = jsonData.system_info.hostname
-    def cores = jsonData.system_info.cores
-    def workspacesCount = jsonData.workspaces_count
-    def licenseKey = jsonData.containsKey("license") ? jsonData.license_key : jsonData.license
-
-    // Write CSV headers if file is new
-    if (!new File(csvFilePath).exists()) {
-        def headers = ["Environment", "Services_Count", "RBAC_Users", "Kong_Version", "DB_Version",
-                       "Uname", "Hostname", "Cores", "Workspaces_Count", "License_Key"]
-        csvContent.append(headers.join(",")).append("\n")
-    }
-
-    // Append row data
-    def values = [environment, servicesCount, rbacUsers, kongVersion, dbVersion, uname, hostname,
-                  cores, workspacesCount, licenseKey]
-    csvContent.append(values.join(",")).append("\n")
-
-    // Write CSV file
-    new File(csvFilePath).text += csvContent.toString()
-    println "CSV file created: ${csvFilePath}"
-}
-
-// Function to send email with CSV attachment
-def sendEmailWithCsv() {
-    def csvFiles = new File("${env.WORKSPACE}").listFiles().findAll { it.name.endsWith(".csv") }
-    
-    if (csvFiles.isEmpty()) {
-        println "No CSV files found to send."
-        return
-    }
-
-    def attachmentPattern = csvFiles.collect { it.name }.join(",")
-    
-    emailext(
-        to: "navneet.patidar@noexternalmail.hsbc.com",
-        subject: "Admin API Pipeline Report",
-        body: """Hi Team,
-
-This is an auto-generated email.
-Please find the attached report.
-
-Regards,
-Automated System""",
-        attachmentsPattern: attachmentPattern
-    )
-
-    println "Email sent successfully with CSV attachment!"
-}
-
-// Execute the function
-processJsonAndSendEmail()
