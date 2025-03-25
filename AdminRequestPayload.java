@@ -1,45 +1,68 @@
-package com.janaushadhi.adminservice.requestpayload;
-import java.util.List;
+public class EngagementValidationResponse {
+    private boolean success;
+    private String gbgf;
+    private String workspace;
+    private String dpHost;
+    private List<String> mandatoryPlugins;
+    private String cpAdminApiUrl;
+    private String dpHostUrl;
+    private String logs;
+    private String errors;
 
-import com.janaushadhi.adminservice.entity.WebsiteManagementSubMenu;
-import com.janaushadhi.adminservice.responsepayload.AdminStateResponsePayload;
+    // Constructors
+    public EngagementValidationResponse() {
+        this.success = true;
+        this.gbgf = "";
+        this.workspace = "";
+        this.dpHost = "";
+        this.mandatoryPlugins = new ArrayList<>();
+        this.cpAdminApiUrl = "";
+        this.dpHostUrl = "";
+        this.logs = "";
+        this.errors = "";
+    }
 
-import lombok.Data;
+    // Builder method for fluent construction
+    public static EngagementValidationResponse builder() {
+        return new EngagementValidationResponse();
+    }
 
-@Data
-public class AdminRequestPayload {
+    // Getters and Setters
+    public boolean isSuccess() {
+        return success;
+    }
 
-    private  Long id;
-    private String userName;
-    private String email;
-    private String adminProfile;
-    private  Integer  roleid;
-    private String description;
-    private Short isView;
-    private  Short isDocumentVerification;
-    private Short isUserstatus;
-    private Short isApplicationStatus;
-    private Short isDrugLicenceVerification;
-    private Short isAggrementVerification;
-    private Short isIntitailApprovalWithDSC;
-    private Short isFinalApprovalWithDSC;
-    private Short status;
-    private Short isAllState;
-    //25-06-2025 //role management
-    private Short isDashboard;
-    private Short isUserManagement;
-    private Short isRecruitment;
-    private Short isWebsiteManagament;
-    private WebsiteManagementSubMenuRequest websiteManagementSubMenu;
-  //25-06-2025 //role management end
-//    private List<Short> stateId;
-//    private List<Short> districtId;
-    private List<AdminStateResponsePayload> adminStateMapping;
-//    private List<AdminDistrictMapping> adminDistrictMapping;
-//    private List<AdminStateDistrictPayload> adminStateDistrictPayload;
-    
-    //04-07-2024 for login access for categorywise
-    private String accessCategory; 
-    private String accessSubCategory;
-    private Short isExportCsv;
+    public EngagementValidationResponse setSuccess(boolean success) {
+        this.success = success;
+        return this;
+    }
+
+    public String getGbgf() {
+        return gbgf;
+    }
+
+    public EngagementValidationResponse setGbgf(String gbgf) {
+        this.gbgf = gbgf;
+        return this;
+    }
+
+    // ... similar getters and setters for all fields (omitted for brevity)
+    // Each setter should return 'this' for method chaining
+
+    // Helper methods
+    public EngagementValidationResponse appendLog(String message) {
+        if (!this.logs.isEmpty()) {
+            this.logs += " | ";
+        }
+        this.logs += message;
+        return this;
+    }
+
+    public EngagementValidationResponse appendError(String message) {
+        if (!this.errors.isEmpty()) {
+            this.errors += " | ";
+        }
+        this.errors += message;
+        return this;
+    }
 }
