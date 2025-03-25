@@ -1,7 +1,19 @@
-CREATE TABLE IF NOT EXISTS public.dmz_lb_master (
-    id SERIAL NOT NULL,
-    load_balancer character varying(150) COLLATE pg_catalog."default" NOT NULL,
-    environment character varying(20) COLLATE pg_catalog."default" NOT NULL,
-    region character varying(20) COLLATE pg_catalog."default" NOT NULL,
-    CONSTRAINT dmz_lb_master_pkey PRIMARY KEY (id)
-);
+@GetMapping(value = "/validate", 
+           consumes = MediaType.APPLICATION_JSON_VALUE, 
+           produces = MediaType.APPLICATION_JSON_VALUE)
+public ResponseEntity<WorkspaceValidationResponse> validateWorkspace(
+    @RequestParam String engagementId,
+    @RequestParam String workspace) {
+    
+    LOGGER.info("Validating workspace for Engagement ID: {} and Workspace: {}", engagementId, workspace);
+    WorkspaceValidationResponse response = hapCerService.validateWorkspace(engagementId, workspace);
+    LOGGER.info("Validation completed for Engagement ID: {}", engagementId);
+    return ResponseEntity.ok(response);
+}
+
+// Add this record/class somewhere in your code
+public record WorkspaceValidationResponse(
+    boolean isValid,
+    String message,
+    Instant timestamp
+) {}
