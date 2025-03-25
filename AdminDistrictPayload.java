@@ -1,82 +1,28 @@
-package com.hsbc.hap.cer.service.impl;
+-- First create a table for the load balancer data
+CREATE TABLE IF NOT EXISTS public.load_balancers (
+    id integer NOT NULL,
+    load_balancer character varying(150) COLLATE pg_catalog."default" NOT NULL,
+    environment character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    region character varying(20) COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT load_balancers_pkey PRIMARY KEY (id)
+);
 
-import com.hsbc.hap.cer.dao.CpMasterDetailsDao;
-import com.hsbc.hap.cer.dao.DmzLibMasterDao;
-import com.hsbc.hap.cer.model.WorkspaceTarget;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
-import java.util.HashMap;
-import java.util.Map;
-
-@Service
-public class MapCERServiceImpl {
-
-    private final CpMasterDetailsDao cpMasterDetailsDao;
-    private final DmzLibMasterDao dmzLibMasterDao;
-    
-    @Autowired
-    public MapCERServiceImpl(CpMasterDetailsDao cpMasterDetailsDao, 
-                           DmzLibMasterDao dmzLibMasterDao) {
-        this.cpMasterDetailsDao = cpMasterDetailsDao;
-        this.dmzLibMasterDao = dmzLibMasterDao;
-    }
-
-    public Map<String, Object> validateWorkspaceForEngagement(WorkspaceTarget workspaceTarget) {
-        Map<String, Object> response = new HashMap<>();
-        StringBuilder errors = new StringBuilder();
-        StringBuilder logs = new StringBuilder();
-
-        // Fetch CP Admin API URL
-        if (workspaceTarget != null) {
-            try {
-                String apiUrl = cpMasterDetailsDao.findAdminApiUrlByEngagementAndWorkspace(
-                    workspaceTarget.getEngagementId(), 
-                    workspaceTarget.getWorkspace());
-                
-                if (StringUtils.hasText(apiUrl)) {
-                    response.put("cp_admin_api_url", apiUrl);
-                    logs.append("CP Admin API URL fetched ! ");
-                } else {
-                    errors.append("CP Admin API URL not found ! ");
-                    logs.append("CP Admin API URL not found ! ");
-                }
-            } catch (Exception e) {
-                errors.append("Error fetching CP Admin API URL ! ");
-                logs.append("Database error occurred while fetching CP Admin API URL ! ");
-            }
-        } else {
-            errors.append("Workspace not validated, cannot fetch CP Admin API URL ! ");
-            logs.append("Workspace not validated, cannot fetch CP Admin API URL ! ");
-        }
-
-        // Fetch DMZ Load Balancer
-        if (workspaceTarget != null) {
-            try {
-                DmzLibMaster dmzLibMaster = dmzLibMasterDao.findByEnvironmentAndRegion(
-                    workspaceTarget.getEnvironment(), 
-                    workspaceTarget.getRegion());
-                
-                if (dmzLibMaster != null) {
-                    response.put("dmz_lb", dmzLibMaster.getLoadBalancer());
-                    logs.append("DMZ Load Balancer fetched ! ");
-                } else {
-                    errors.append("DMZ Load Balancer not found ! ");
-                    logs.append("DMZ Load Balancer not found ! ");
-                }
-            } catch (Exception e) {
-                errors.append("Error fetching DMZ Load Balancer ! ");
-                logs.append("Database error occurred while fetching DMZ Load Balancer ! ");
-            }
-        }
-
-        // Add errors and logs to response if they exist
-        if (errors.length() > 0) {
-            response.put("errors", errors.toString());
-        }
-        response.put("logs", logs.toString());
-        
-        return response;
-    }
-}
+-- Then you could query it with joins to your other tables
+SELECT 
+    et.engagement_id,
+    et.region as engagement_region,
+    lb.region as lb_region,
+    lb.load_balancer,
+    lb.environment,
+    wt.workspace
+FROM 
+    public.engagement_target et
+JOIN 
+    public.workspace_target wt ON et.engagement_id = wt.engagement_id
+JOIN 
+    public.load_balancers lb ON wt.environment = lb.environment AND et.region = lb.region
+WHERE 
+    wt.environment = 'DEV'  -- Example filter
+ORDER BY 
+    et.engagement_id
+NOT NULL et.region, lb.load_balancer, wt.workspace;
