@@ -1,10 +1,17 @@
-public interface CpMasterDetailsDao extends JpaRepository<CpMaster, CpMasterId> {
+INSERT INTO "public"."cp_master" ("region", "platform", "environment", "cp_admin_api_url") 
+VALUES ('HK', 'GCP', 'DEV', 'https://kcphk-dev.hsbc-11383538-kongcphk10-dev.dev.gcp.cloud.hk.hsbc');
 
-    @Query("SELECT c.cp_admin_api_url FROM cp_master c WHERE (c.region, c.environment) IN " +
-           "(SELECT e.region, w.environment FROM engagement_target e JOIN workspace_target w " +
-           "ON e.engagement_id = w.engagement_id WHERE e.engagement_id = :engagementId AND w.workspace = :workspace)")
-    Optional<String> findCpAdminApiUrl(@Param("engagementId") String engagementId,
-                                     @Param("workspace") String workspace);
+INSERT INTO "public"."cp_master" ("region", "platform", "environment", "cp_admin_api_url") 
+VALUES ('UK', 'GCP', 'DEV', 'https://kcpuk-dev.hsbc-11382986-kongcpuk10-dev.dev.gcp.cloud.uk.hsbc');
 
-    CpMaster findById_RegionAndId_Environment(String region, String environment);
-}
+INSERT INTO "public"."cp_master" ("region", "platform", "environment", "cp_admin_api_url") 
+VALUES ('HK', 'GCP', 'PPD', 'https://kcphk-ppd.hsbc-11383538-kongcphk90-dev.dev.gcp.cloud.hk.hsbc');
+
+INSERT INTO "public"."cp_master" ("region", "platform", "environment", "cp_admin_api_url") 
+VALUES ('UK', 'GCP', 'PPD', 'https://kcpuk-ppd.hsbc-11382986-kongcpuk90-dev.dev.gcp.cloud.uk.hsbc');
+
+INSERT INTO "public"."cp_master" ("region", "platform", "environment", "cp_admin_api_url") 
+VALUES ('HK', 'GCP', 'PRD', 'https://kcphk-prod.hsbc-11383538-kongcphk-prod.prod.gcp.cloud.hk.hsbc');
+
+INSERT INTO "public"."cp_master" ("region", "platform", "environment", "cp_admin_api_url") 
+VALUES ('UK', 'GCP', 'PRD', 'https://kcpuk-prod.hsbc-11382986-kongcpuk-prod.prod.gcp.cloud.uk.hsbc');
