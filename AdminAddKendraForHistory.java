@@ -1,25 +1,28 @@
-package com.hsbc.hap.cer.dao;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface CpMasterDetailsDao extends JpaRepository<CpMaster, CpMasterId> {
-    
-    // Direct query based on the SQL in your image
-    @Query(value = "SELECT c.cp_admin_api_url FROM cp_master c " +
-                   "WHERE (c.region, c.environment) IN " +
-                   "(SELECT a.region, b.environment FROM engagement_target a " +
-                   "JOIN workspace_target b ON a.engagement_id = b.engagement_id " +
-                   "WHERE b.engagement_id = :engagementId)", 
-           nativeQuery = true)
-    String findCpAdminApiUrlByEngagementId(@Param("engagementId") String engagementId);
-    
-    // Alternative JPA version (non-native query)
-    @Query("SELECT c.cpAdminApiUrl FROM CpMaster c " +
-           "WHERE c.region IN (SELECT e.region FROM EngagementTarget e WHERE e.engagementId = :engagementId) " +
-           "AND c.environment IN (SELECT w.environment FROM WorkspaceTarget w WHERE w.engagementId = :engagementId)")
-    String findCpAdminApiUrlByEngagementIdJpa(@Param("engagementId") String engagementId);
+public class MapCERServiceImpl implements MapCERService {
+    public List<Map<String, Object>> getCerEngagementData(String engagementId, String wo) {
+        // Fetch CP Admin API URL
+        if (workspaceTarget != null) {
+            CpMaster cpMaster = cpMasterDetailsDao.findById_RegionAndId_Environment(
+                workspaceTarget.getRegion(),  // Use getRegion() instead of getEnvironment() twice
+                workspaceTarget.getEnvironment());
+            
+            if (cpMaster != null) {
+                response.put("Cp_admin_api_url", cpMaster.getCp_admin_api_url());
+                logs.append("CP Admin API URL fetched | ");
+            } else {
+                errors.append("CP Admin API URL not found | ");
+                logs.append("CP Admin API URL not found | ");
+            }
+        } else {
+            errors.append("Workspace not validated, cannot fetch CP Admin API URL | ");
+            logs.append("Workspace not validated_cannot fetch CP Admin API URL | ");
+        }
+        
+        // Fetch DMZ Load Balancer
+        if (workspaceTarget != null) {
+            DmzLbMaster dmzlbMaster = dmzlbMasterDao.findByEnvironmentAndRegion(
+                workspaceTarget.getEnvironment(), 
+                workspaceTarget.getPosition());
+        }
+    }
 }
