@@ -1,39 +1,68 @@
-if (workspaceTarget != null) {
-    String environment = workspaceTarget.getEnvironment();
+@Service
+public class HapCERServiceImpl implements HapCERService {
+
+    @Autowired
+    private OpMasterDetailsDao opMasterDetailsDao;
     
-    // Fetch EngagementTarget to get region
-    Optional<EngagementTargetKong> engagementTargetOpt = engagementTargetDao.findByEngagementId(workspaceTarget.getId().getEngagementId());
+    @Autowired
+    private EngagementTargetKongDao engagementTargetKongDao;
+    
+    @Autowired
+    private WorkspaceTargetDao workspaceTargetDao; // Assuming this exists
 
-    if (engagementTargetOpt.isPresent()) {
-        String region = engagementTargetOpt.get().getRegion();
-        
-        if (region != null && !region.isEmpty()) {
-            // Fetch CP Admin API URL using environment & region
-            Optional<CpMaster> cpMasterOpt = cpMasterDetailsDao.findById_RegionAndId_Environment(region, environment);
+    @Override
+    public Map<String, String> getCpAdminApiUrl(String engagementId, String workspace) {
+        Map<String, String> response = new HashMap<>();
+        StringBuilder logs = new StringBuilder();
+        StringBuilder errors = new StringBuilder();
 
-            if (cpMasterOpt.isPresent()) {
-                CpMaster master = cpMasterOpt.get();
-                
-                if (master.getCp_admin_api_url() != null && !master.getCp_admin_api_url().isEmpty()) {
-                    response.put("cp_admin_api_url", master.getCp_admin_api_url());
-                    logs.append("CP Admin API URL fetched successfully. ");
-                } else {
-                    errors.append("CP Admin API URL is empty or null. ");
-                    logs.append("CP Admin API URL is empty or null. ");
-                }
-            } else {
-                errors.append("No CP Admin API URL found for region: " + region + " and environment: " + environment);
-                logs.append("CP Admin API URL not found.");
-            }
-        } else {
-            errors.append("Region is null or empty for engagementId: " + workspaceTarget.getId().getEngagementId());
-            logs.append("Region not found for engagementId.");
+        // Fetch WorkspaceTarget to get environment
+        WorkspaceTarget workspaceTarget = workspaceTargetDao.findByWorkspace(workspace);
+        if (workspaceTarget == null) {
+            errors.append("Workspace target not found. ");
+            response.put("error", errors.toString());
+            return response;
         }
-    } else {
-        errors.append("Engagement ID not found in engagement_target table.");
-        logs.append("Engagement ID not found.");
+
+        String environment = workspaceTarget.getEnvironment();
+
+        // Fetch EngagementTarget to get region
+        Optional<EngagementTargetKong> engagementTargetOpt = engagementTargetKongDao.findByEngagementId(engagementId);
+        if (!engagementTargetOpt.isPresent()) {
+            errors.append("Engagement target not found. ");
+            response.put("error", errors.toString());
+            return response;
+        }
+
+        String region = engagementTargetOpt.get().getRegion();
+        if (region == null || region.isEmpty()) {
+            errors.append("Region is empty or null. ");
+            response.put("error", errors.toString());
+            return response;
+        }
+
+        // Fetch CP Admin API URL using engagementId & workspace
+        Optional<String> cpAdminApiUrlOpt = opMasterDetailsDao.findCpAdminApiUrl(engagementId, workspace);
+        if (!cpAdminApiUrlOpt.isPresent()) {
+            errors.append("CP Admin API URL not found. ");
+            logs.append("CP Admin API URL not found. ");
+            response.put("error", errors.toString());
+            response.put("log", logs.toString());
+            return response;
+        }
+
+        String cpAdminApiUrl = cpAdminApiUrlOpt.get();
+        if (cpAdminApiUrl != null && !cpAdminApiUrl.isEmpty()) {
+            response.put("cp_admin_api_url", cpAdminApiUrl);
+            logs.append("CP Admin API URL fetched successfully. ");
+            response.put("log", logs.toString());
+        } else {
+            errors.append("CP Admin API URL is empty or null. ");
+            logs.append("CP Admin API URL is empty or null. ");
+            response.put("error", errors.toString());
+            response.put("log", logs.toString());
+        }
+
+        return response;
     }
-} else {
-    errors.append("Workspace not validated, cannot fetch CP Admin API URL.");
-    logs.append("Workspace not validated.");
 }
