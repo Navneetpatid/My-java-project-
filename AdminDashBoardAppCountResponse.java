@@ -1,68 +1,107 @@
-@Service
-public class HapCERServiceImpl implements HapCERService {
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 
-    @Autowired
-    private OpMasterDetailsDao opMasterDetailsDao;
-    
-    @Autowired
-    private EngagementTargetKongDao engagementTargetKongDao;
-    
-    @Autowired
-    private WorkspaceTargetDao workspaceTargetDao; // Assuming this exists
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-    @Override
-    public Map<String, String> getCpAdminApiUrl(String engagementId, String workspace) {
-        Map<String, String> response = new HashMap<>();
-        StringBuilder logs = new StringBuilder();
-        StringBuilder errors = new StringBuilder();
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
-        // Fetch WorkspaceTarget to get environment
-        WorkspaceTarget workspaceTarget = workspaceTargetDao.findByWorkspace(workspace);
-        if (workspaceTarget == null) {
-            errors.append("Workspace target not found. ");
-            response.put("error", errors.toString());
-            return response;
-        }
+public class CERControllerTest {
 
-        String environment = workspaceTarget.getEnvironment();
+    @InjectMocks
+    private CERController cerController;
 
-        // Fetch EngagementTarget to get region
-        Optional<EngagementTargetKong> engagementTargetOpt = engagementTargetKongDao.findByEngagementId(engagementId);
-        if (!engagementTargetOpt.isPresent()) {
-            errors.append("Engagement target not found. ");
-            response.put("error", errors.toString());
-            return response;
-        }
+    @Mock
+    private HapCerService hapCerService;
 
-        String region = engagementTargetOpt.get().getRegion();
-        if (region == null || region.isEmpty()) {
-            errors.append("Region is empty or null. ");
-            response.put("error", errors.toString());
-            return response;
-        }
+    @Mock
+    private BindingResult bindingResult;
 
-        // Fetch CP Admin API URL using engagementId & workspace
-        Optional<String> cpAdminApiUrlOpt = opMasterDetailsDao.findCpAdminApiUrl(engagementId, workspace);
-        if (!cpAdminApiUrlOpt.isPresent()) {
-            errors.append("CP Admin API URL not found. ");
-            logs.append("CP Admin API URL not found. ");
-            response.put("error", errors.toString());
-            response.put("log", logs.toString());
-            return response;
-        }
+    private KongCerRequest request;
 
-        String cpAdminApiUrl = cpAdminApiUrlOpt.get();
-        if (cpAdminApiUrl != null && !cpAdminApiUrl.isEmpty()) {
-            response.put("cp_admin_api_url", cpAdminApiUrl);
-            logs.append("CP Admin API URL fetched successfully. ");
-            response.put("log", logs.toString());
-        } else {
-            errors.append("CP Admin API URL is empty or null. ");
-            logs.append("CP Admin API URL is empty or null. ");
-            response.put("error", errors.toString());
-            response.put("log", logs.toString());
-        }
-
-        return response;
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+        request = new KongCerRequest();
+        // Set up any required request fields here
     }
-}
+
+    @Test
+    void testProcessKongCerRequest_Success() {
+        // Mock successful service response
+        ResponseDto<Map<String, Object>> mockResponseDto = new ResponseDto<>();
+        mockResponseDto.setStatusCode(HttpStatus.OK.value());
+        mockResponseDto.setMessage("CER data processed successfully");
+        
+        Map<String, Object> expectedResponse = new LinkedHashMap<>();
+        expectedResponse.put("message", "CER data processed successfully");
+
+        when(hapCerService.processKongCerRequest(request)).thenReturn(mockResponseDto);
+        when(bindingResult.hasErrors()).thenReturn(false);
+
+        // Call the controller method
+        ResponseEntity<Map<String, Object>> response = 
+            cerController.processKongCerRequest(request, bindingResult);
+
+        // Assertions
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+    }
+
+    @Test
+    void testProcessKongCerRequest_ValidationErrors() {
+        // Mock validation errors
+        FieldError fieldError1 = new FieldError("kongCerRequest", "field1", "Field1 is required");
+        FieldError fieldError2 = new FieldError("kongCerRequest", "field2", "Field2 must be valid");
+        List<FieldError> fieldErrors = Arrays.asList(fieldError1, fieldError2);
+        
+        when(bindingResult.hasErrors()).thenReturn(true);
+        when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
+
+        // Call the controller method
+        ResponseEntity<Map<String, Object>> response = 
+            cerController.processKongCerRequest(request, bindingResult);
+
+        // Assertions
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        
+        Map<String, Object> responseBody = response.getBody();
+        assertNotNull(responseBody);
+        assertEquals("field1 : Field1 is required, field2 : Field2 must be valid", 
+                     responseBody.get("message"));
+    }
+
+    @Test
+    void testProcessKongCerRequest_ServiceError() {
+        // Mock service error response
+        ResponseDto<Map<String, Object>> mockResponseDto = new ResponseDto<>();
+        mockResponseDto.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        mockResponseDto.setMessage("Internal server error occurred");
+        
+        when(hapCerService.processKongCerRequest(request)).thenReturn(mockResponseDto);
+        when(bindingResult.hasErrors()).thenReturn(false);
+
+        // Call the controller method
+        ResponseEntity<Map<String, Object>> response = 
+            cerController.processKongCerRequest(request, bindingResult);
+
+        // Assertions
+        assertNotNull(response);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals("Internal server error occurred", 
+                     response.getBody().get("message"));
+    }
+             }
