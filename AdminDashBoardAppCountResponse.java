@@ -1,29 +1,23 @@
-@Test
-void testGetCerEngagementData() {
-    // 1. Prepare test data
-    String engagementId = "engagement123";
-    String workspace = "workspace1";
-    
-    // 2. Create mock response data
-    List<Map<String, Object>> mockResponseList = new ArrayList<>();
-    Map<String, Object> data1 = new LinkedHashMap<>();
-    data1.put("key1", "value1");
-    data1.put("key2", 123);
-    mockResponseList.add(data1);
-    
-    // 3. Mock the service call
-    Mockito.when(hapCerService.getCerEngagementData(engagementId, workspace))
-           .thenReturn(mockResponseList);
-    
-    // 4. Call the controller method
-    ResponseEntity<List<Map<String, Object>>> response = 
-        controller.getCerEngagementData(engagementId, workspace);
-    
-    // 5. Assertions
-    assertNotNull(response);
-    assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(mockResponseList, response.getBody());
-    
-    // Optional: Verify logging was called
-    // (Add if you have Mockito.verify() for your logger)
+public interface EngagementTargetRepository extends JpaRepository<EngagementTarget, String> {
+}
+
+public interface WorkspaceTargetRepository extends JpaRepository<WorkspaceTarget, WorkspaceTargetId> {
+    Optional<WorkspaceTarget> findByEngagementIdAndWorkspace(String engagementId, String workspace);
+}
+
+public interface EngagementPluginRepository extends JpaRepository<EngagementPlugin, String> {
+    List<EngagementPlugin> findByEngagementId(String engagementId);
+}
+
+public interface CpMasterRepository extends JpaRepository<CpMaster, CpMasterId> {
+    @Query("SELECT cm.cpAdminApiUrl FROM CpMaster cm " +
+           "WHERE EXISTS (SELECT 1 FROM EngagementTarget et " +
+           "JOIN WorkspaceTarget wt ON et.engagementId = wt.engagementId " +
+           "WHERE et.engagementId = :engagementId " +
+           "AND wt.workspace = :workspace " +
+           "AND et.region = cm.id.region " +
+           "AND wt.environment = cm.id.environment)")
+    Optional<String> findCpAdminApiUrlByEngagementAndWorkspace(
+        @Param("engagementId") String engagementId, 
+        @Param("workspace") String workspace);
 }
