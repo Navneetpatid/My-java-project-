@@ -1,66 +1,51 @@
+package com.example.service.impl;
+
+import com.example.entity.CpMaster;
+import com.example.entity.CpMasterId;
+import com.example.repository.CpMasterRepository;
+import com.example.service.HapCERService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class HapCERServiceImpl implements HapCERService {
 
     @Autowired
-    private CpMasterDetailsDao cpMasterDetailsDao;
+    private CpMasterRepository cpMasterRepository;
 
-    public List<Map<String, Object>> getCerEngagementData(String engagementId, String workspace) {
+    @Override
+    public Map<String, Object> getCerEngagementData(String engagementId, String region, String platform, String environment) {
         Map<String, Object> response = new HashMap<>();
-        StringBuilder errors = new StringBuilder();
         StringBuilder logs = new StringBuilder();
+        StringBuilder errors = new StringBuilder();
+
+        logs.append("No mandatory plugins found | ");
 
         // Fetch CP Admin API URL
-        if (workspaceTarget != null) {
-            try {
-                // METHOD 1: Using embedded ID (recommended)
-                CpMasterId cpMasterId = new CpMasterId(
-                    workspaceTarget.getRegion(),
-                    workspaceTarget.getPlatform(),
-                    workspaceTarget.getEnvironment()
-                );
-                
-                Optional<CpMaster> cpMasterOpt = cpMasterDetailsDao.findById(cpMasterId);
-                
-                // METHOD 2: Alternative using custom query
-                /*
-                CpMaster cpMaster = cpMasterDetailsDao.findById_RegionAndId_PlatformAndId_Environment(
-                    workspaceTarget.getRegion(),
-                    workspaceTarget.getPlatform(),
-                    workspaceTarget.getEnvironment()
-                );
-                */
-                
-                if (cpMasterOpt.isPresent()) {
-                    CpMaster cpMaster = cpMasterOpt.get();
-                    response.put("cp_admin_api_url", cpMaster.getCp_admin_api_url());
-                    logs.append("CP Admin API URL fetched successfully");
-                } else {
-                    errors.append("CP configuration not found for region: ")
-                          .append(workspaceTarget.getRegion())
-                          .append(", platform: ")
-                          .append(workspaceTarget.getPlatform())
-                          .append(", environment: ")
-                          .append(workspaceTarget.getEnvironment());
-                }
-            } catch (Exception e) {
-                errors.append("Error fetching CP Admin URL: ").append(e.getMessage());
+        if (region != null && platform != null && environment != null) {
+            CpMasterId cpMasterId = new CpMasterId(region, platform, environment);
+            Optional<CpMaster> cpMasterOpt = cpMasterRepository.findById(cpMasterId);
+
+            if (cpMasterOpt.isPresent()) {
+                CpMaster cpMaster = cpMasterOpt.get();
+                response.put("cp_url", cpMaster.getCpAdminApiUrl());
+                logs.append("CP Admin API URL fetched | ");
+            } else {
+                errors.append("CP Admin API URL not found | ");
+                logs.append("CP Admin API URL not found | ");
             }
         } else {
-            errors.append("Workspace target is null - cannot fetch CP Admin API URL");
+            errors.append("Invalid input, cannot fetch CP Admin API URL | ");
+            logs.append("Invalid input, cannot fetch CP Admin API URL | ");
         }
 
-        // Add errors/logs to response if needed
-        if (errors.length() > 0) {
-            response.put("errors", errors.toString());
-        }
-        if (logs.length() > 0) {
-            response.put("logs", logs.toString());
-        }
+        response.put("logs", logs.toString());
+        response.put("errors", errors.toString());
 
-        return Collections.singletonList(response);
+        return response;
     }
-                }
+}
