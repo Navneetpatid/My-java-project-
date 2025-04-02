@@ -1,46 +1,29 @@
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import java.util.Map;
-import java.util.LinkedHashMap;
-
-public class CERControllerTest {
-
-    @InjectMocks
-    CERController controller;
-
-    @Mock
-    HapCerService hapCerService;
-
-    private KongCerRequest request;
-
-    @BeforeEach
-    void setup() {
-        MockitoAnnotations.openMocks(this);
-        request = new KongCerRequest();
-        // Set any required request fields here
-    }
-
-    @Test
-    void testProcessKongCerRequest() {
-        Map<String, Object> expectedResponse = new LinkedHashMap<>();
-        expectedResponse.put("message", "CER data processed successfully");
-
-        ResponseDto<Map<String, Object>> mockResponseDto = new ResponseDto<>();
-        mockResponseDto.setStatusCode(HttpStatus.OK.value());
-        mockResponseDto.setMessage("CER data processed successfully");
-
-        Mockito.when(hapCerService.processKongCerRequest(request)).thenReturn(mockResponseDto);
-        
-        ResponseEntity<Map<String, Object>> response = controller.processKongCerRequest(request, null);
-        
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedResponse, response.getBody());
-    }
+@Test
+void testGetCerEngagementData() {
+    // 1. Prepare test data
+    String engagementId = "engagement123";
+    String workspace = "workspace1";
+    
+    // 2. Create mock response data
+    List<Map<String, Object>> mockResponseList = new ArrayList<>();
+    Map<String, Object> data1 = new LinkedHashMap<>();
+    data1.put("key1", "value1");
+    data1.put("key2", 123);
+    mockResponseList.add(data1);
+    
+    // 3. Mock the service call
+    Mockito.when(hapCerService.getCerEngagementData(engagementId, workspace))
+           .thenReturn(mockResponseList);
+    
+    // 4. Call the controller method
+    ResponseEntity<List<Map<String, Object>>> response = 
+        controller.getCerEngagementData(engagementId, workspace);
+    
+    // 5. Assertions
+    assertNotNull(response);
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(mockResponseList, response.getBody());
+    
+    // Optional: Verify logging was called
+    // (Add if you have Mockito.verify() for your logger)
 }
