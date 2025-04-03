@@ -1,21 +1,81 @@
--- Clear existing data if needed (optional)
--- TRUNCATE TABLE dmz_lb_master;
+package com.hsbc.hap.cer.entity;
 
--- Insert data for DMZ Load Balancer master table
-INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
-VALUES (1, 'hap-dev-api-gw-wk.systems.uk.hsbc', 'DEV', 'UK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+import javax.persistence.*;
+import java.time.LocalDateTime;
 
-INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
-VALUES (2, 'hap-dev-api-gw-tk.hk.hsbc', 'DEV', 'HK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+@Entity
+@Table(name = "dmz_lb_master")
+public class DmzLbMaster {
 
-INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
-VALUES (3, 'hap-preprod-api-gw-wk.systems.uk.hsbc', 'PPD', 'UK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    @Id
+    @Column(name = "id")
+    private Long id;
 
-INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
-VALUES (4, 'hap-preprod-api-gw-tk.hk.hsbc', 'PPD', 'HK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    @Column(name = "load_balancer", nullable = false)
+    private String loadBalancer;
 
-INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
-VALUES (5, 'hap-api-gw.systems.uk.hsbc', 'PRD', 'UK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    @Column(name = "environment", nullable = false)
+    private String environment;
 
-INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
-VALUES (6, 'hap-api-gw-tk.hk.hsbc,hap-api-gw-sk.hk.hsbc', 'PRD', 'HK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    @Column(name = "region", nullable = false)
+    private String region;
+
+    @Column(name = "created_date")
+    private LocalDateTime createdDate;
+
+    @Column(name = "updated_date")
+    private LocalDateTime updatedDate;
+
+    // Constructors
+    public DmzLbMaster() {
+    }
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getLoadBalancer() {
+        return loadBalancer;
+    }
+
+    public void setLoadBalancer(String loadBalancer) {
+        this.loadBalancer = loadBalancer;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(LocalDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public LocalDateTime getUpdatedDate() {
+        return updatedDate;
+    }
+
+    public void setUpdatedDate(LocalDateTime updatedDate) {
+        this.updatedDate = updatedDate;
+    }
+}
