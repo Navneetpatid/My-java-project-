@@ -1,23 +1,36 @@
 public class HapCERServiceImpl implements HapCERService {
     
     public CerGetResponse getCerEngagementData(String engagementId, String workspace) {
-        // Initialize necessary objects
         StringBuilder logs = new StringBuilder();
         StringBuilder errors = new StringBuilder();
         CerGetResponse response = new CerGetResponse();
+        final String LOG_SEPARATOR = " || ";  // Separator between log messages
 
         try {
-            // Main logic would go here
+            // Example log messages (replace with your actual logging logic)
+            logs.append("EngagementId Validated").append(LOG_SEPARATOR);
+            logs.append("Workspace Validated").append(LOG_SEPARATOR);
+            logs.append("Mandatory plugins fetched").append(LOG_SEPARATOR);
             
+            // DMZ Load Balancer check
+            if(dmzlbOpt.isPresent()) {
+                logs.append("Received DMZ Load Balancer: ").append(dmzlbOpt.get()).append(LOG_SEPARATOR);
+                response.setDmzlb(dmzlbOpt.get());
+            } else {
+                logs.append("DMZ Load Balancer not found for ").append(workspace).append(LOG_SEPARATOR);
+                errors.append("DMZ Load Balancer not found").append(LOG_SEPARATOR);
+            }
+
             response.setSuccess(errors.length() == 0);
-            response.setLogs(logs.toString().trim() + " ");      // Added proper spacing
-            response.setErrors(errors.toString().trim() + " ");  // Added proper spacing
+            response.setLogs(logs.toString());
+            response.setErrors(errors.toString());
             
         } catch(Exception e) {
-            appendErrorAndLog(errors, logs, "Unexpected error: ", e.getMessage() + " ");  // Added proper spacing
+            logs.append("Unexpected error: ").append(e.getMessage()).append(LOG_SEPARATOR);
+            errors.append("Unexpected error: ").append(e.getMessage()).append(LOG_SEPARATOR);
             response.setSuccess(false);
-            response.setErrors(errors.toString().trim() + " ");
-            response.setLogs(logs.toString().trim() + " ");
+            response.setErrors(errors.toString());
+            response.setLogs(logs.toString());
         }
 
         return response;
@@ -25,8 +38,8 @@ public class HapCERServiceImpl implements HapCERService {
 
     private CerGetResponse buildErrorResponse1(String errorMessage, String logMessage) {
         CerGetResponse response = new CerGetResponse();
-        response.setErrors(errorMessage.trim() + " ");    // Added proper spacing
-        response.setLogs(logMessage.trim() + " ");       // Added proper spacing
+        response.setErrors(errorMessage + " || ");
+        response.setLogs(logMessage + " || ");
         response.setSuccess(false);
         return response;
     }
