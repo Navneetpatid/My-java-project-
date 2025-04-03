@@ -1,46 +1,30 @@
-package com.janaushadhi.adminservice.responsepayload;
+-- Clear existing data if needed (optional)
+-- TRUNCATE TABLE dmz_lb_master;
 
-import java.util.List;
+-- Insert data for DMZ Load Balancer master table
+INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+VALUES (1, 'hap-dev-api-gw-wk.systems.uk.hsbc', 'DEV', 'UK', SYSDATE, SYSDATE);
 
-import lombok.Data;
-@Data
-public class AdminKendraApplicationResponse implements Comparable<AdminKendraApplicationResponse>{
-	
-	 private Long id;
-	    private Integer  roleId;
-	    private String roleName;
-	    private String applicationId;
-	    private Long kendraId;
-	    private String category;
-	    private Long kendraStateId;
-		private Long kendraDistrictId;
-		private Long kendraBlockId;
-	    private String nameOfApplicant;
-		private String nameOfOrganization;
-		private Long adminId;
-		//04-07-2024 for login access for categorywise
-	    private String subCategory;
-	    private List<String> partyNames;
-//		private String latitude;
-//		private String longitude;
-		//Permission Approval
-		private boolean isDocumentVerification;
-	    private boolean isDrugLicenceVerification;
-	    private boolean isAggrementVerification;
-	    private boolean isIntitailApprovalWithDSC;
-	    private boolean isFinalApprovalWithDSC;
-		//
-		
+INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+VALUES (2, 'hap-dev-api-gw-tk.hk.hsbc', 'DEV', 'HK', SYSDATE, SYSDATE);
 
-		private Integer applicationStatus;
-		private boolean isLatestApplication;
-		private Integer applicationFinalApproval;
-		private String rejectedReason;
-		private String createdDate;
-		private String updated;
-		private Integer serialNo;
-		@Override
-		public int compareTo(AdminKendraApplicationResponse otherApplication) {
-			 return -this.getCreatedDate().compareTo(otherApplication.getCreatedDate());//(- minus used for desending order)
-		}
-}
+INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+VALUES (3, 'hap-preprod-api-gw-wk.systems.uk.hsbc', 'PPD', 'UK', SYSDATE, SYSDATE);
+
+INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+VALUES (4, 'hap-preprod-api-gw-tk.hk.hsbc', 'PPD', 'HK', SYSDATE, SYSDATE);
+
+INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+VALUES (5, 'hap-api-gw.systems.uk.hsbc', 'PRD', 'UK', SYSDATE, SYSDATE);
+
+-- Note: For ID 6, there appears to be multiple load balancers in the original data
+-- You can choose to insert them as a single string or split into multiple records
+INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+VALUES (6, 'hap-api-gw-tk.hk.hsbc,hap-api-gw-sk.hk.hsbc', 'PRD', 'HK', SYSDATE, SYSDATE);
+
+-- Alternative for ID 6 if you want to split into separate records:
+-- INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+-- VALUES (6, 'hap-api-gw-tk.hk.hsbc', 'PRD', 'HK', SYSDATE, SYSDATE);
+--
+-- INSERT INTO dmz_lb_master (id, load_balancer, environment, region, created_date, updated_date)
+-- VALUES (7, 'hap-api-gw-sk.hk.hsbc', 'PRD', 'HK', SYSDATE, SYSD
