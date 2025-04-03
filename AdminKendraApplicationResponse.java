@@ -1,69 +1,71 @@
-package com.hsbc.hap.cer.service.impl;
-
-import com.hsbc.hap.cer.entity.DmzLbMaster;
-import com.hsbc.hap.cer.repository.DmzLbMasterRepository;
-import com.hsbc.hap.cer.model.LibDetails;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
 @Service
-public class DmzLbMasterService {
+public class HapCERServiceImpl implements HapCERService {
 
-    private final DmzLbMasterRepository dmzLbMasterRepository;
-
+    private final EngagementTargetRepository engagementRepo;
+    private final WorkspaceTargetRepository workspaceRepo;
+    private final DmzLbMasterRepository dmzLbMasterRepo;
+    
     @Autowired
-    public DmzLbMasterService(DmzLbMasterRepository dmzLbMasterRepository) {
-        this.dmzLbMasterRepository = dmzLbMasterRepository;
+    public HapCERServiceImpl(EngagementTargetRepository engagementRepo,
+                           WorkspaceTargetRepository workspaceRepo,
+                           DmzLbMasterRepository dmzLbMasterRepo) {
+        this.engagementRepo = engagementRepo;
+        this.workspaceRepo = workspaceRepo;
+        this.dmzLbMasterRepo = dmzLbMasterRepo;
     }
 
-    public LibDetails getDmzLbById(Long id) {
-        LibDetails libDetails = new LibDetails();
-        libDetails.setLogs("DMZ Load Balancer lookup started");
+    @Override
+    public Map<String, Object> getCerEngagementData(String engagementId, String workspace) {
+        Map<String, Object> response = new HashMap<>();
+        StringBuilder logs = new StringBuilder();
+        StringBuilder errors = new StringBuilder();
+        boolean success = false;
 
         try {
-            Optional<DmzLbMaster> dmzLbMaster = dmzLbMasterRepository.findById(id);
-            
-            if (dmzLbMaster.isPresent()) {
-                libDetails.setLb(dmzLbMaster.get().getLoadBalancer());
-                libDetails.setSuccess(true);
-                libDetails.setLogs(libDetails.getLogs() + " | DMZ Load Balancer found");
+            // 1. Safely get engagement and workspace
+            Optional<EngagementTarget> engagementOpt = engagementRepo.findById(engagementId);
+            Optional<WorkspaceTarget> workspaceTargetOpt = workspaceRepo
+                .findByEngagementIdAndWorkspace(engagementId, workspace);
+
+            if (workspaceTargetOpt.isPresent() && engagementOpt.isPresent()) {
+                WorkspaceTarget workspaceTarget = workspaceTargetOpt.get();
+                EngagementTarget engagement = engagementOpt.get();
+                
+                // 2. Case-insensitive search
+                Optional<DmzLbMaster> dmzLbMasterOpt = dmzLbMasterRepo
+                    .findByEnvironmentIgnoreCaseAndRegionIgnoreCase(
+                        workspaceTarget.getEnvironment(),
+                        engagement.getRegion()
+                    );
+
+                if (dmzLbMasterOpt.isPresent()) {
+                    DmzLbMaster dmzLbMaster = dmzLbMasterOpt.get();
+                    response.put("dmz_lb", dmzLbMaster.getLoadBalancer());
+                    logs.append("DMZ Load Balancer fetched | ");
+                    success = true;
+                } else {
+                    errors.append("DMZ Load Balancer not found | ");
+                    logs.append("DMZ Load Balancer not found | ");
+                }
             } else {
-                libDetails.setErrors("DMZ Load Balancer not found for ID: " + id);
-                libDetails.setLogs(libDetails.getLogs() + " | DMZ Load Balancer not found");
+                if (!engagementOpt.isPresent()) {
+                    errors.append("Engagement not found | ");
+                    logs.append("Engagement validation failed | ");
+                }
+                if (!workspaceTargetOpt.isPresent()) {
+                    errors.append("Workspace not validated | ");
+                    logs.append("Workspace validation failed | ");
+                }
             }
         } catch (Exception e) {
-            libDetails.setErrors("Error retrieving DMZ Load Balancer: " + e.getMessage());
-            libDetails.setLogs(libDetails.getLogs() + " | Error: " + e.getMessage());
+            errors.append("System error: ").append(e.getMessage()).append(" | ");
+            logs.append("Error occurred: ").append(e.getMessage()).append(" | ");
         }
 
-        return libDetails;
+        response.put("logs", logs.toString());
+        response.put("errors", errors.toString());
+        response.put("success", success);
+        
+        return response;
     }
-
-    public LibDetails getDmzLbByEnvironmentAndRegion(String environment, String region) {
-        LibDetails libDetails = new LibDetails();
-        libDetails.setLogs("DMZ Load Balancer lookup started");
-
-        try {
-            Optional<DmzLbMaster> dmzLbMaster = dmzLbMasterRepository
-                .findByEnvironmentAndRegion(environment, region);
-            
-            if (dmzLbMaster.isPresent()) {
-                libDetails.setLb(dmzLbMaster.get().getLoadBalancer());
-                libDetails.setSuccess(true);
-                libDetails.setLogs(libDetails.getLogs() + " | DMZ Load Balancer found");
-            } else {
-                libDetails.setErrors(String.format(
-                    "DMZ Load Balancer not found for Environment: %s, Region: %s", 
-                    environment, region));
-                libDetails.setLogs(libDetails.getLogs() + " | DMZ Load Balancer not found");
             }
-        } catch (Exception e) {
-            libDetails.setErrors("Error retrieving DMZ Load Balancer: " + e.getMessage());
-            libDetails.setLogs(libDetails.getLogs() + " | Error: " + e.getMessage());
-        }
-
-        return libDetails;
-    }
-        }
