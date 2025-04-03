@@ -1,81 +1,17 @@
-package com.hsbc.hap.cer.entity;
+package com.hsbc.hap.cer.repository;
 
-import javax.persistence.*;
-import java.time.LocalDateTime;
+import com.hsbc.hap.cer.entity.DmzLbMaster;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-@Entity
-@Table(name = "dmz_lb_master")
-public class DmzLbMaster {
+import java.util.Optional;
 
-    @Id
-    @Column(name = "id")
-    private Long id;
+@Repository
+public interface DmzLbMasterRepository extends JpaRepository<DmzLbMaster, Long> {
 
-    @Column(name = "load_balancer", nullable = false)
-    private String loadBalancer;
+    // Find by ID
+    Optional<DmzLbMaster> findById(Long id);
 
-    @Column(name = "environment", nullable = false)
-    private String environment;
-
-    @Column(name = "region", nullable = false)
-    private String region;
-
-    @Column(name = "created_date")
-    private LocalDateTime createdDate;
-
-    @Column(name = "updated_date")
-    private LocalDateTime updatedDate;
-
-    // Constructors
-    public DmzLbMaster() {
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getLoadBalancer() {
-        return loadBalancer;
-    }
-
-    public void setLoadBalancer(String loadBalancer) {
-        this.loadBalancer = loadBalancer;
-    }
-
-    public String getEnvironment() {
-        return environment;
-    }
-
-    public void setEnvironment(String environment) {
-        this.environment = environment;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public LocalDateTime getUpdatedDate() {
-        return updatedDate;
-    }
-
-    public void setUpdatedDate(LocalDateTime updatedDate) {
-        this.updatedDate = updatedDate;
-    }
+    // Find by environment and region
+    Optional<DmzLbMaster> findByEnvironmentAndRegion(String environment, String region);
 }
