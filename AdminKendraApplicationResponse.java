@@ -1,71 +1,28 @@
-@Service
-public class HapCERServiceImpl implements HapCERService {
-
-    private final EngagementTargetRepository engagementRepo;
-    private final WorkspaceTargetRepository workspaceRepo;
-    private final DmzLbMasterRepository dmzLbMasterRepo;
-    
-    @Autowired
-    public HapCERServiceImpl(EngagementTargetRepository engagementRepo,
-                           WorkspaceTargetRepository workspaceRepo,
-                           DmzLbMasterRepository dmzLbMasterRepo) {
-        this.engagementRepo = engagementRepo;
-        this.workspaceRepo = workspaceRepo;
-        this.dmzLbMasterRepo = dmzLbMasterRepo;
-    }
-
-    @Override
-    public Map<String, Object> getCerEngagementData(String engagementId, String workspace) {
-        Map<String, Object> response = new HashMap<>();
-        StringBuilder logs = new StringBuilder();
-        StringBuilder errors = new StringBuilder();
-        boolean success = false;
-
-        try {
-            // 1. Safely get engagement and workspace
-            Optional<EngagementTarget> engagementOpt = engagementRepo.findById(engagementId);
-            Optional<WorkspaceTarget> workspaceTargetOpt = workspaceRepo
-                .findByEngagementIdAndWorkspace(engagementId, workspace);
-
-            if (workspaceTargetOpt.isPresent() && engagementOpt.isPresent()) {
-                WorkspaceTarget workspaceTarget = workspaceTargetOpt.get();
-                EngagementTarget engagement = engagementOpt.get();
-                
-                // 2. Case-insensitive search
-                Optional<DmzLbMaster> dmzLbMasterOpt = dmzLbMasterRepo
-                    .findByEnvironmentIgnoreCaseAndRegionIgnoreCase(
-                        workspaceTarget.getEnvironment(),
-                        engagement.getRegion()
-                    );
-
-                if (dmzLbMasterOpt.isPresent()) {
-                    DmzLbMaster dmzLbMaster = dmzLbMasterOpt.get();
-                    response.put("dmz_lb", dmzLbMaster.getLoadBalancer());
-                    logs.append("DMZ Load Balancer fetched | ");
-                    success = true;
-                } else {
-                    errors.append("DMZ Load Balancer not found | ");
-                    logs.append("DMZ Load Balancer not found | ");
-                }
-            } else {
-                if (!engagementOpt.isPresent()) {
-                    errors.append("Engagement not found | ");
-                    logs.append("Engagement validation failed | ");
-                }
-                if (!workspaceTargetOpt.isPresent()) {
-                    errors.append("Workspace not validated | ");
-                    logs.append("Workspace validation failed | ");
-                }
-            }
-        } catch (Exception e) {
-            errors.append("System error: ").append(e.getMessage()).append(" | ");
-            logs.append("Error occurred: ").append(e.getMessage()).append(" | ");
-        }
-
-        response.put("logs", logs.toString());
-        response.put("errors", errors.toString());
-        response.put("success", success);
+public class MapCERServiceImpl implements MapCERService {
+    public CerGetResponse getCerEngagementData(String engagementId, String workspace) {
+        // ... existing code ...
         
+        if(dmzlbOpt.isPresent()) {
+            logs.append(" Received DMZ Load Balancer: ").append(dmzlbOpt.get()).append(" ");  // Added space at end
+            response.setDmzlb(dmzlbOpt.get());
+        } else {
+            String printData = "DMZ Load Balancer not found for " + workspace + " ";  // Added space at end
+            logs.append(printData);
+            errors.append(printData).append(" ");  // Added space at end
+        }
+        
+        // ... existing code ...
+        
+        response.setSuccess(errors.length() == 0);
+        response.setLogs(logs.toString().trim() + " ");  // Ensure trailing space
+        response.setErrors(errors.toString().trim() + " ");  // Ensure trailing space
+        
+        catch(Exception e) {
+            appendErrorAndLog(errors, logs, "Unexpected error: ", e.getMessage() + " ");  // Added space
+            response.setSuccess(false);
+            response.setErrors(errors.toString().trim() + " ");
+            response.setLogs(logs.toString().trim() + " ");
+        }
         return response;
     }
-            }
+}
