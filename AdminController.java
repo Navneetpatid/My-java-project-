@@ -1,47 +1,73 @@
--- HK DEV
-INSERT INTO public.cp_master (region, platform, environment, cp_admin_api_url)
-SELECT 'HK', 'GCP', 'DEV', 'https://kcphk-dev.hsbc-11383538-kongcphk10-dev.dev.gcp.cloud.hk.hsbc'
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.cp_master 
-    WHERE region = 'HK' AND platform = 'GCP' AND environment = 'DEV'
-);
+package com.hsbc.hap.cer.service;
 
--- UK DEV
-INSERT INTO public.cp_master (region, platform, environment, cp_admin_api_url)
-SELECT 'UK', 'GCP', 'DEV', 'https://kcpuk-dev.hsbc-11382986-kongcpuk10-dev.dev.gcp.cloud.uk.hsbc'
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.cp_master 
-    WHERE region = 'UK' AND platform = 'GCP' AND environment = 'DEV'
-);
+import com.hsbc.hap.cer.model.CerGetResponse;
+import com.hsbc.hap.cer.model.EngagementTargetKong;
+import com.hsbc.hap.cer.model.WorkspaceTarget;
+import org.springframework.stereotype.Service;
 
--- HK PPD
-INSERT INTO public.cp_master (region, platform, environment, cp_admin_api_url)
-SELECT 'HK', 'GCP', 'PPD', 'https://kcphk-ppd.hsbc-11383538-kongcphk90-dev.dev.gcp.cloud.hk.hsbc'
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.cp_master 
-    WHERE region = 'HK' AND platform = 'GCP' AND environment = 'PPD'
-);
+import java.util.Optional;
 
--- UK PPD
-INSERT INTO public.cp_master (region, platform, environment, cp_admin_api_url)
-SELECT 'UK', 'GCP', 'PPD', 'https://kcpuk-ppd.hsbc-11382986-kongcpuk90-dev.dev.gcp.cloud.uk.hsbc'
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.cp_master 
-    WHERE region = 'UK' AND platform = 'GCP' AND environment = 'PPD'
-);
+@Service
+public class MapCERServiceImpl implements MapCERService {
 
--- HK PRD (if not already exists)
-INSERT INTO public.cp_master (region, platform, environment, cp_admin_api_url)
-SELECT 'HK', 'GCP', 'PRD', 'https://kcphk-prod.hsbc-11383538-kongcphk-prod.prod.gcp.cloud.hk.hsbc'
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.cp_master 
-    WHERE region = 'HK' AND platform = 'GCP' AND environment = 'PRD'
-);
+    @Override
+    public CerGetResponse getCerEngagementData(String engagementId, String workspace) {
+        CerGetResponse response = new CerGetResponse();
+        StringBuilder logs = new StringBuilder();
+        StringBuilder errors = new StringBuilder();
+        final String LOG_SEPARATOR = " || ";
+        
+        try {
+            // Validate Engagement
+            Optional<EngagementTargetKong> engagementTargetOpt = engagementTargetKongDao.findByEngagementId(engagementId);
+            if (!engagementTargetOpt.isPresent()) {
+                return buildErrorResponse("engagementId not found", "engagementId not found in engagement_target");
+            }
+            
+            EngagementTargetKong engagementTarget = engagementTargetOpt.get();
+            response.setGbgr(engagementTarget.getGbgr());
+            logs.append("EngagementId Validated").append(LOG_SEPARATOR);
 
--- UK PRD (if not already exists)
-INSERT INTO public.cp_master (region, platform, environment, cp_admin_api_url)
-SELECT 'UK', 'GCP', 'PRD', 'https://kcpuk-prod.hsbc-11382986-kongcpuk-prod.prod.gcp.cloud.uk.hsbc'
-WHERE NOT EXISTS (
-    SELECT 1 FROM public.cp_master 
-    WHERE region = 'UK' AND platform = 'GCP' AND environment = 'PRD'
-);
+            // Validate Workspace
+            Optional<WorkspaceTarget> workspaceTargetOpt = workspaceTargetDetailsDao.findById_EngagementIdAndId_Workspace(engagementId, workspace);
+            if (!workspaceTargetOpt.isPresent()) {
+                appendErrorAndLog(errors, logs, "Workspace not found", 
+                    "Workspace not found for engagement ID " + engagementId);
+            } else {
+                WorkspaceTarget workspaceTarget = workspaceTargetOpt.get();
+                response.setWorkspace(workspace);
+                response.setOp_host_url(workspaceTarget.getOp_host_url());
+                logs.append("Workspace Validated").append(LOG_SEPARATOR);
+            }
+            
+            // Set logs and errors in response
+            if (errors.length() > 0) {
+                response.setStatus("ERROR");
+                response.setErrorMessages(errors.toString());
+            } else {
+                response.setStatus("SUCCESS");
+            }
+            response.setLogs(logs.toString());
+            
+        } catch (Exception e) {
+            return buildErrorResponse("System error: " + e.getMessage(), 
+                   "Exception occurred: " + e.getClass().getSimpleName());
+        }
+        
+        return response;
+    }
+
+    private CerGetResponse buildErrorResponse(String errorMessage, String logMessage) {
+        CerGetResponse response = new CerGetResponse();
+        response.setStatus("ERROR");
+        response.setErrorMessages(errorMessage);
+        response.setLogs(logMessage);
+        return response;
+    }
+
+    private void appendErrorAndLog(StringBuilder errors, StringBuilder logs, 
+                                 String errorMessage, String logMessage) {
+        errors.append(errorMessage).append("; ");
+        logs.append(logMessage).append("; ");
+    }
+}
