@@ -1,27 +1,27 @@
-package com.example.demo.service;
+package com.example.demo.controller;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
+import com.example.demo.dto.QueryRequest;
+import com.example.demo.service.BulkUpdateService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-@Service
-public class BulkUpdateService {
+@RestController
+@RequestMapping("/api/update")
+public class BulkUpdateController {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private BulkUpdateService bulkUpdateService;
 
-    @Transactional
-    public void executeQueries(String rawQuery) {
-        if (rawQuery == null || rawQuery.trim().isEmpty()) {
-            throw new IllegalArgumentException("Query is empty or null");
-        }
-
-        String[] queries = rawQuery.split(";");
-        for (String query : queries) {
-            if (!query.trim().isEmpty()) {
-                entityManager.createNativeQuery(query.trim()).executeUpdate();
-            }
+    @PostMapping("/execute")
+    public ResponseEntity<Object> bulkUpdate(@RequestBody QueryRequest queryRequest) {
+        try {
+            bulkUpdateService.executeQueries(queryRequest.getQuery());
+            return ResponseEntity.ok("Update successful");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Error occurred: " + e.getMessage());
         }
     }
 }
