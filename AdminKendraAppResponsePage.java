@@ -1,18 +1,27 @@
-@RestController
-@RequestMapping("/api/update")
-public class BulkUpdateController {
+package com.example.demo.service;
 
-    @Autowired
-    private BulkUpdateService bulkUpdateService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
-    @PostMapping("/execute")
-    public ResponseEntity<Object> bulkUpdate(@RequestBody QueryRequest queryRequest) {
-        try {
-            bulkUpdateService.executeQueries(queryRequest.getQuery());
-            return ResponseEntity.ok("Update successful");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body("Error occurred: " + e.getMessage());
+@Service
+public class BulkUpdateService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Transactional
+    public void executeQueries(String rawQuery) {
+        if (rawQuery == null || rawQuery.trim().isEmpty()) {
+            throw new IllegalArgumentException("Query is empty or null");
+        }
+
+        String[] queries = rawQuery.split(";");
+        for (String query : queries) {
+            if (!query.trim().isEmpty()) {
+                entityManager.createNativeQuery(query.trim()).executeUpdate();
+            }
         }
     }
 }
