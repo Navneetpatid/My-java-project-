@@ -1,12 +1,11 @@
-@RestController
-@RequestMapping("/api")
-public class BulkUpdateController {
+public class QueryRequest {
+    private String query;
 
-    @Autowired
-    private CoreService coreService;
+    public String getQuery() {
+        return query;
+    }
 
-    @PostMapping("/bulk/update")
-    public ResponseEntity<?> bulkUpdate(@RequestBody QueryRequest request) {
-        return coreService.bulkUpdate(request);
+    public void setQuery(String query) {
+        this.query = query;
     }
 }
