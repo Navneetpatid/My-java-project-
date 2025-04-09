@@ -1,3 +1,18 @@
-UPDATE workspace_target
-SET environment = 'UAT'  -- replace 'UAT' with your desired value
-WHERE engagement_id = 'HAP-COO-40004';
+@RestController
+@RequestMapping("/api/update")
+public class BulkUpdateController {
+
+    @Autowired
+    private BulkUpdateService bulkUpdateService;
+
+    @PostMapping("/execute")
+    public ResponseEntity<Object> bulkUpdate(@RequestBody QueryRequest queryRequest) {
+        try {
+            bulkUpdateService.executeQueries(queryRequest.getQuery());
+            return ResponseEntity.ok("Update successful");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Error occurred: " + e.getMessage());
+        }
+    }
+}
