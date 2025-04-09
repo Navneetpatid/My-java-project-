@@ -1,47 +1,28 @@
-package com.hsbc.hap.cer.service.impl;
+package com.hsbc.hap.cer.controller;
 
+import com.hsbc.hap.cer.model.QueryRequest;
 import com.hsbc.hap.cer.model.QueryResult;
 import com.hsbc.hap.cer.service.HapCERService;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-import java.util.ArrayList;
 import java.util.List;
 
-@Service
-public class HapCERServiceImpl implements HapCERService {
+@RestController
+@RequestMapping("/hap/cer")
+public class CERController {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private HapCERService hapCerService;
 
-    @Override
-    @Transactional
-    public List<QueryResult> executeQueries(List<String> queries) {
-        List<QueryResult> results = new ArrayList<>();
-
-        if (queries == null || queries.isEmpty()) {
-            results.add(new QueryResult(null, false, "Query list is empty or null"));
-            return results;
+    @PostMapping("/bulkUpdate")
+    public ResponseEntity<?> bulkUpdate(@RequestBody QueryRequest queryRequest) {
+        try {
+            List<QueryResult> resultList = hapCerService.executeQueries(queryRequest.getQueries());
+            return ResponseEntity.ok(resultList);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Server error: " + e.getMessage());
         }
-
-        for (String query : queries) {
-            String trimmedQuery = query.trim();
-            if (trimmedQuery.isEmpty()) continue;
-
-            try {
-                entityManager.createNativeQuery(trimmedQuery).executeUpdate();
-                results.add(new QueryResult(trimmedQuery, true, null));
-            } catch (IllegalArgumentException e) {
-                results.add(new QueryResult(trimmedQuery, false, "Invalid SQL query syntax"));
-            } catch (javax.persistence.PersistenceException e) {
-                results.add(new QueryResult(trimmedQuery, false, "Database execution error"));
-            } catch (Exception e) {
-                results.add(new QueryResult(trimmedQuery, false, "Unexpected error occurred"));
-            }
-        }
-
-        return results;
     }
 }
