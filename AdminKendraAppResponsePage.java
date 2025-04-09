@@ -1,23 +1,12 @@
-package com.janaushadhi.adminservice.responsepayload;
+@RestController
+@RequestMapping("/api")
+public class BulkUpdateController {
 
-import java.util.List;
+    @Autowired
+    private CoreService coreService;
 
-import lombok.Data;
-
-@Data
-public class AdminKendraAppResponsePage {
-
-	private Integer pageIndex;
-
-    private Integer pageSize;
-
-    private Long totalElement;
-
-    private Integer totalPages;
-
-    private Boolean isLastPage;
-
-    private Boolean isFirstPage;
-
-    private List<AdminKendraApplicationResponse> adminKendraApplicationsList;
+    @PostMapping("/bulk/update")
+    public ResponseEntity<?> bulkUpdate(@RequestBody QueryRequest request) {
+        return coreService.bulkUpdate(request);
+    }
 }
