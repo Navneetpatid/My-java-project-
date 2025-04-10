@@ -10,24 +10,21 @@ public List<QueryResult> executeQueries(List<String> queries) {
     for (String query : queries) {
         String trimmedQuery = query.trim();
         if (trimmedQuery.isEmpty()) continue;
-
+        
         try {
             int updatedCount = entityManager.createNativeQuery(trimmedQuery).executeUpdate();
-
-            if (updatedCount > 0) {
-                results.add(new QueryResult(trimmedQuery, true, null));
-            } else {
-                results.add(new QueryResult(trimmedQuery, false, "Query executed but no rows updated"));
-            }
-
-        } catch (IllegalArgumentException e) {
+            results.add(new QueryResult(trimmedQuery, updatedCount > 0, 
+                updatedCount > 0 ? null : "Query executed but no rows updated"));
+        } 
+        catch (IllegalArgumentException e) {
             results.add(new QueryResult(trimmedQuery, false, "Invalid query syntax: " + e.getMessage()));
-        } catch (RuntimeException e) {
-            results.add(new QueryResult(trimmedQuery, false, "Runtime exception: " + e.getMessage()));
-        } catch (Exception e) {
+        } 
+        catch (PersistenceException e) {
+            results.add(new QueryResult(trimmedQuery, false, "Database error: " + e.getMessage()));
+        }
+        catch (Exception e) {
             results.add(new QueryResult(trimmedQuery, false, "Unexpected error: " + e.getMessage()));
         }
     }
-
     return results;
 }
