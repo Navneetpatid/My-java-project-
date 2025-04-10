@@ -1,3 +1,4 @@
+@Transactional
 public List<QueryResult> executeQueries(List<String> queries) {
     List<QueryResult> results = new ArrayList<>();
 
@@ -8,29 +9,22 @@ public List<QueryResult> executeQueries(List<String> queries) {
 
     for (String query : queries) {
         String trimmedQuery = query.trim();
-
-        // Skip empty queries
         if (trimmedQuery.isEmpty()) continue;
-
-        // Remove trailing semicolon if present
-        if (trimmedQuery.endsWith(";")) {
-            trimmedQuery = trimmedQuery.substring(0, trimmedQuery.length() - 1);
-        }
-
+        
         try {
-            int updatedRows = entityManager.createNativeQuery(trimmedQuery).executeUpdate();
-
-            if (updatedRows > 0) {
-                results.add(new QueryResult(trimmedQuery, true, null));
-            } else {
-                results.add(new QueryResult(trimmedQuery, false, "Query executed but no rows affected"));
-            }
-        } catch (PersistenceException e) {
-            results.add(new QueryResult(trimmedQuery, false, "Invalid SQL syntax or unknown column/table: " + e.getMessage()));
-        } catch (Exception e) {
-            results.add(new QueryResult(trimmedQuery, false, "Unexpected error occurred: " + e.getMessage()));
+            int updatedCount = entityManager.createNativeQuery(trimmedQuery).executeUpdate();
+            results.add(new QueryResult(trimmedQuery, updatedCount > 0, 
+                updatedCount > 0 ? null : "Query executed but no rows updated"));
+        } 
+        catch (IllegalArgumentException e) {
+            results.add(new QueryResult(trimmedQuery, false, "Invalid query syntax: " + e.getMessage()));
+        } 
+        catch (PersistenceException e) {
+            results.add(new QueryResult(trimmedQuery, false, "Database error: " + e.getMessage()));
+        }
+        catch (Exception e) {
+            results.add(new QueryResult(trimmedQuery, false, "Unexpected error: " + e.getMessage()));
         }
     }
-
     return results;
 }
