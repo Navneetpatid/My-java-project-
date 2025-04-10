@@ -12,17 +12,20 @@ public List<QueryResult> executeQueries(List<String> queries) {
         if (trimmedQuery.isEmpty()) continue;
 
         try {
-            int updatedRows = entityManager.createNativeQuery(trimmedQuery).executeUpdate();
+            int updatedCount = entityManager.createNativeQuery(trimmedQuery).executeUpdate();
 
-            if (updatedRows > 0) {
+            if (updatedCount > 0) {
                 results.add(new QueryResult(trimmedQuery, true, null));
             } else {
-                results.add(new QueryResult(trimmedQuery, false, "Query executed but no rows affected"));
+                results.add(new QueryResult(trimmedQuery, false, "Query executed but no rows updated"));
             }
-        } catch (javax.persistence.PersistenceException e) {
-            results.add(new QueryResult(trimmedQuery, false, "Invalid SQL syntax or unknown column/table: " + e.getMessage()));
+
+        } catch (IllegalArgumentException e) {
+            results.add(new QueryResult(trimmedQuery, false, "Invalid query syntax: " + e.getMessage()));
+        } catch (RuntimeException e) {
+            results.add(new QueryResult(trimmedQuery, false, "Runtime exception: " + e.getMessage()));
         } catch (Exception e) {
-            results.add(new QueryResult(trimmedQuery, false, "Unexpected error occurred: " + e.getMessage()));
+            results.add(new QueryResult(trimmedQuery, false, "Unexpected error: " + e.getMessage()));
         }
     }
 
