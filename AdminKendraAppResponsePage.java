@@ -6,12 +6,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.LinkedHashMap;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CERControllerTest {
     
@@ -19,74 +15,91 @@ public class CERControllerTest {
     private CERController controller;
     
     @Mock
-    private HapCERService hapCERService;
+    private HapCerService hapCerService;
     
-    private ShpCerRequest request;
-    private KongCerRequest kongRequest;
+    private String engagementId;
+    private String workspace;
     
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        request = new ShpCerRequest();
-        request.setPlatform("ikp");
-        kongRequest = new KongCerRequest();
+        engagementId = "engagement123";
+        workspace = "workspace1";
     }
 
     @Test
-    void testProcessShpCerRequest() {
-        String expectedResponse = "{\"message\": \"CER data saved successfully\"}";
-        Mockito.when(hapCERService.processShpCerRequest(request)).thenReturn(expectedResponse);
+    void testGetCerEngagementData_Success() {
+        // 1. Prepare test response
+        CerGetResponse cerGetResponse = new CerGetResponse();
+        cerGetResponse.setEngagementId(engagementId);
+        cerGetResponse.setWorkspace(workspace);
+        // Set other response fields as needed
         
-        ResponseEntity<String> response = controller.processShpCerRequest(request);
+        // 2. Mock service call
+        Mockito.when(hapCerService.getCerEngagementData(engagementId, workspace))
+               .thenReturn(cerGetResponse);
         
+        // 3. Call controller method
+        ResponseEntity<CerGetResponse> response = 
+            controller.getCerEngagementData(engagementId, workspace);
+        
+        // 4. Verify results
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedResponse, response.getBody());
+        assertEquals(cerGetResponse, response.getBody());
     }
 
     @Test
-    void testProcessKongCerRequest_Success() {
-        // Prepare success response
-        Map<String, Object> expectedResponse = new LinkedHashMap<>();
-        expectedResponse.put("message", "Kong CER data saved successfully");
+    void testGetCerEngagementData_NotFound() {
+        // Mock service to return null
+        Mockito.when(hapCerService.getCerEngagementData(engagementId, workspace))
+               .thenReturn(null);
         
-        ResponseDto<Map<String, Object>> responseDto = new ResponseDto<>();
-        responseDto.setStatusCode(HttpStatus.OK);
-        responseDto.setMessage("Kong CER data saved successfully");
+        ResponseEntity<CerGetResponse> response = 
+            controller.getCerEngagementData(engagementId, workspace);
         
-        Mockito.when(hapCERService.processKongCerRequest(kongRequest)).thenReturn(responseDto);
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void testBulkUpdate_Success() {
+        // 1. Prepare test data
+        QueryRequest queryRequest = new QueryRequest();
+        // Set up query request properties
         
-        // Mock empty binding result (no errors)
-        BindingResult bindingResult = Mockito.mock(BindingResult.class);
-        Mockito.when(bindingResult.hasErrors()).thenReturn(false);
+        List<QueryResult> expectedResults = new ArrayList<>();
+        // Add expected query results
         
-        ResponseEntity<Map<String, Object>> response = 
-            controller.processKongCerRequest(kongRequest, bindingResult);
+        // 2. Mock service call
+        Mockito.when(hapCerService.executeQueries(queryRequest.getQueries()))
+               .thenReturn(expectedResults);
         
+        // 3. Call controller method
+        ResponseEntity<?> response = controller.bulkUpdate(queryRequest);
+        
+        // 4. Verify results
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(expectedResponse, response.getBody());
+        assertEquals(expectedResults, response.getBody());
     }
 
     @Test
-    void testProcessKongCerRequest_ValidationError() {
-        // Prepare error response
-        Map<String, Object> expectedResponse = new LinkedHashMap<>();
-        expectedResponse.put("message", "field1: error message1, field2: error message2");
+    void testBulkUpdate_Failure() {
+        // 1. Prepare test data
+        QueryRequest queryRequest = new QueryRequest();
+        // Set up query request properties
         
-        // Mock binding result with errors
-        BindingResult bindingResult = Mockito.mock(BindingResult.class);
-        Mockito.when(bindingResult.hasErrors()).thenReturn(true);
-        Mockito.when(bindingResult.getFieldErrors()).thenReturn(Arrays.asList(
-            new FieldError("object", "field1", "error message1"),
-            new FieldError("object", "field2", "error message2")
-        ));
+        // 2. Mock service to throw exception
+        Mockito.when(hapCerService.executeQueries(queryRequest.getQueries()))
+               .thenThrow(new RuntimeException("Database error"));
         
-        ResponseEntity<Map<String, Object>> response = 
-            controller.processKongCerRequest(kongRequest, bindingResult);
+        // 3. Call controller method
+        ResponseEntity<?> response = controller.bulkUpdate(queryRequest);
         
+        // 4. Verify error handling
         assertNotNull(response);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(expectedResponse, response.getBody());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertTrue(response.getBody().toString().contains("Server error"));
     }
-            }
+    }
