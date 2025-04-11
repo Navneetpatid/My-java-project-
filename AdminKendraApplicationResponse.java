@@ -1,31 +1,13 @@
-@SpringBootTest
-@AutoConfigureMockMvc
-class CERControllerTest {
+@Test
+void testProcessKongCerRequest_InvalidRequest() {
+    KongCerRequest invalidRequest = new KongCerRequest(); // Missing required field(s)
 
-    @Autowired
-    private MockMvc mockMvc;
+    BindingResult result = new BeanPropertyBindingResult(invalidRequest, "KongCerRequest");
 
-    @MockBean
-    private HapCerService hapCerService;
+    // Replace 'fieldName' with actual property name that is required
+    result.rejectValue("requiredFieldName", "NotNull", "must not be null");
 
-    @Test
-    void testGetCerEngagementData() throws Exception {
-        String engagementId = "12345";
-        String workspace = "dev";
+    ResponseEntity<Map<String, Object>> response = controller.processKongCerRequest(invalidRequest, result);
 
-        CerGetResponse mockResponse = new CerGetResponse();
-        // Add mock data to mockResponse as needed
-
-        when(hapCerService.getCerEngagementData(eq(engagementId), eq(workspace)))
-                .thenReturn(mockResponse);
-
-        mockMvc.perform(get("/data")
-                        .param("engagementId", engagementId)
-                        .param("workspace", workspace)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                // Add more .andExpect(...) depending on mockResponse fields
-                ;
-    }
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
 }
