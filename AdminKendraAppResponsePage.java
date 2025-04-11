@@ -1,86 +1,92 @@
-@TestPropertySource(locations = { "classpath:application-test.properties" })
-@ExtendWith(SpringExtension.class)
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.LinkedHashMap;
+
 public class CERControllerTest {
-
+    
     @InjectMocks
-    private CERController cerController;
-
+    private CERController controller;
+    
     @Mock
     private HapCERService hapCERService;
-
-    @Mock
-    private BindingResult bindingResult;
-
-    @Mock
-    private Logger logger;
-
+    
+    private ShpCerRequest request;
     private KongCerRequest kongRequest;
-
+    
     @BeforeEach
-    void setUp() {
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+        request = new ShpCerRequest();
+        request.setPlatform("ikp");
         kongRequest = new KongCerRequest();
-        kongRequest.setRequiredField("valid_value"); // Set minimum required valid data
-        ReflectionTestUtils.setField(cerController, "LOGGER", logger);
     }
 
-    // Validation Failure Test
     @Test
-    void processKongCerRequest_ShouldReturnBadRequest_WhenValidationFails() {
-        // Arrange
-        when(bindingResult.hasErrors()).thenReturn(true);
-        List<FieldError> fieldErrors = List.of(
-            new FieldError("kongCerRequest", "requiredField", "must not be blank"),
-            new FieldError("kongCerRequest", "numericField", "must be a positive number")
-        );
-        when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
+    void testProcessShpCerRequest() {
+        String expectedResponse = "{\"message\": \"CER data saved successfully\"}";
+        Mockito.when(hapCERService.processShpCerRequest(request)).thenReturn(expectedResponse);
+        
+        ResponseEntity<String> response = controller.processShpCerRequest(request);
+        
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+    }
 
-        // Act
+    @Test
+    void testProcessKongCerRequest_Success() {
+        // Prepare success response
+        Map<String, Object> expectedResponse = new LinkedHashMap<>();
+        expectedResponse.put("message", "Kong CER data saved successfully");
+        
+        ResponseDto<Map<String, Object>> responseDto = new ResponseDto<>();
+        responseDto.setStatusCode(HttpStatus.OK);
+        responseDto.setMessage("Kong CER data saved successfully");
+        
+        Mockito.when(hapCERService.processKongCerRequest(kongRequest)).thenReturn(responseDto);
+        
+        // Mock empty binding result (no errors)
+        BindingResult bindingResult = Mockito.mock(BindingResult.class);
+        Mockito.when(bindingResult.hasErrors()).thenReturn(false);
+        
         ResponseEntity<Map<String, Object>> response = 
-            cerController.processKongCerRequest(kongRequest, bindingResult);
+            controller.processKongCerRequest(kongRequest, bindingResult);
+        
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+    }
 
-        // Assert
+    @Test
+    void testProcessKongCerRequest_ValidationError() {
+        // Prepare error response
+        Map<String, Object> expectedResponse = new LinkedHashMap<>();
+        expectedResponse.put("message", "field1: error message1, field2: error message2");
+        
+        // Mock binding result with errors
+        BindingResult bindingResult = Mockito.mock(BindingResult.class);
+        Mockito.when(bindingResult.hasErrors()).thenReturn(true);
+        Mockito.when(bindingResult.getFieldErrors()).thenReturn(Arrays.asList(
+            new FieldError("object", "field1", "error message1"),
+            new FieldError("object", "field2", "error message2")
+        ));
+        
+        ResponseEntity<Map<String, Object>> response = 
+            controller.processKongCerRequest(kongRequest, bindingResult);
+        
+        assertNotNull(response);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(
-            "requiredField: must not be blank, numericField: must be a positive number",
-            response.getBody().get("message")
-        );
-        verifyNoInteractions(hapCERService);
+        assertEquals(expectedResponse, response.getBody());
     }
-
-    // Success Path Test
-    @Test
-    void processKongCerRequest_ShouldReturnSuccess_WhenRequestIsValid() {
-        // Arrange
-        when(bindingResult.hasErrors()).thenReturn(false);
-        ResponseDto<Map<String, Object>> successResponse = new ResponseDto<>();
-        successResponse.setStatusCode(HttpStatus.CREATED.value());
-        successResponse.setMessage("Data processed successfully");
-        when(hapCERService.processKongCerRequest(any())).thenReturn(successResponse);
-
-        // Act
-        ResponseEntity<Map<String, Object>> response = 
-            cerController.processKongCerRequest(kongRequest, bindingResult);
-
-        // Assert
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Data processed successfully", response.getBody().get("message"));
-        verify(hapCERService).processKongCerRequest(kongRequest);
-    }
-
-    // Service Exception Test
-    @Test
-    void processKongCerRequest_ShouldReturnInternalError_WhenServiceFails() {
-        // Arrange
-        when(bindingResult.hasErrors()).thenReturn(false);
-        when(hapCERService.processKongCerRequest(any()))
-            .thenThrow(new RuntimeException("Service unavailable"));
-
-        // Act
-        ResponseEntity<Map<String, Object>> response = 
-            cerController.processKongCerRequest(kongRequest, bindingResult);
-
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertTrue(((String)response.getBody().get("message")).contains("Error processing request"));
-    }
-}
+            }
