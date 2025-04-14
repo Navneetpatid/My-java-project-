@@ -1,13 +1,44 @@
-@Test
-void testProcessKongCerRequest_InvalidRequest() {
-    KongCerRequest invalidRequest = new KongCerRequest(); // Missing required field(s)
+@Transactional
+public List<QueryResult> executeQueries(List<String> queries) {
+    List<QueryResult> results = new ArrayList<>();
 
-    BindingResult result = new BeanPropertyBindingResult(invalidRequest, "KongCerRequest");
+    if (queries == null || queries.isEmpty()) {
+        results.add(new QueryResult(null, false, "Query list is empty or null"));
+        return results;
+    }
 
-    // Replace 'fieldName' with actual property name that is required
-    result.rejectValue("requiredFieldName", "NotNull", "must not be null");
+    for (String query : queries) {
+        String trimmedQuery = query.trim();
 
-    ResponseEntity<Map<String, Object>> response = controller.processKongCerRequest(invalidRequest, result);
+        if (trimmedQuery.isEmpty()) continue;
 
-    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-}
+        // Validate query to allow only specific SQL operations
+        String lowerQuery = trimmedQuery.toLowerCase();
+
+        if (!(lowerQuery.startsWith("update") || lowerQuery.startsWith("insert") || lowerQuery.startsWith("delete"))) {
+            results.add(new QueryResult(trimmedQuery, false, "Only UPDATE, INSERT, DELETE queries are allowed."));
+            continue;
+        }
+
+        if (trimmedQuery.contains(";")) {
+            results.add(new QueryResult(trimmedQuery, false, "Semicolons are not allowed in the query."));
+            continue;
+        }
+
+        try {
+            int updatedRows = entityManager.createNativeQuery(trimmedQuery).executeUpdate();
+
+            if (updatedRows > 0) {
+                results.add(new QueryResult(trimmedQuery, true, null));
+            } else {
+                results.add(new QueryResult(trimmedQuery, false, "Query executed but no rows affected."));
+            }
+        } catch (PersistenceException e) {
+            results.add(new QueryResult(trimmedQuery, false, "Invalid SQL syntax or unknown column/table."));
+        } catch (Exception e) {
+            results.add(new QueryResult(trimmedQuery, false, "Unexpected error occurred: " + e.getMessage()));
+        }
+    }
+
+    return results;
+              }
