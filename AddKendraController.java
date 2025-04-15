@@ -1,45 +1,71 @@
-import jakarta.validation.ConstraintViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+@Transactional
+public List<QueryResult> executeQueries(List<String> queries) {
+    List<QueryResult> results = new ArrayList<>();
+    if (queries == null || queries.isEmpty()) {
+        results.add(new QueryResult(null, false, "Query list is empty or null"));
+        return results;
+    }
 
-import java.util.HashMap;
-import java.util.Map;
+    for (String query : queries) {
+        String trimmedQuery = query.trim();
+        if (trimmedQuery.isEmpty()) continue;
 
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-
-        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            errors.put(error.getField(), error.getDefaultMessage());
+        QueryResult validationResult = validateAndReconstructQuery(trimmedQuery);
+        if (!validationResult.isSuccess()) {
+            results.add(validationResult);
+            continue;
         }
 
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        String safeQuery = validationResult.getQuery(); // already validated
+
+        try {
+            int updatedRows = entityManager.createNativeQuery(safeQuery).executeUpdate();
+            if (updatedRows > 0) {
+                results.add(new QueryResult(safeQuery, true, null));
+            } else {
+                results.add(new QueryResult(safeQuery, false, "Query executed but no rows affected."));
+            }
+        } catch (PersistenceException e) {
+            results.add(new QueryResult(safeQuery, false, "Invalid SQL syntax or unknown column/table."));
+        }
     }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, String>> handleConstraintViolationException(ConstraintViolationException ex) {
-        Map<String, String> errors = new HashMap<>();
-
-        ex.getConstraintViolations().forEach(violation -> {
-            String fieldName = violation.getPropertyPath().toString();
-            String errorMessage = violation.getMessage();
-            errors.put(fieldName, errorMessage);
-        });
-
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    return results;
 }
+private QueryResult validateAndReconstructQuery(String query) {
+    String lowerQuery = query.toLowerCase();
+
+    if (!(lowerQuery.startsWith("update") || lowerQuery.startsWith("insert") || lowerQuery.startsWith("delete"))) {
+        return new QueryResult(query, false, "Only UPDATE, INSERT, DELETE queries are allowed");
+    }
+
+    if (query.contains(";") || query.contains("--") || lowerQuery.contains("drop") || lowerQuery.contains("alter")) {
+        return new QueryResult(query, false, "Query contains disallowed keywords or special characters.");
+    }
+
+    // Basic table whitelist (enhance this list)
+    String[] allowedTables = {"employee", "orders", "product"}; // Add valid table names
+    boolean tableAllowed = false;
+
+    for (String table : allowedTables) {
+        if (lowerQuery.contains(table)) {
+            tableAllowed = true;
+            break;
+        }
+    }
+
+    if (!tableAllowed) {
+        return new QueryResult(query, false, "Query contains a table not allowed.");
+    }
+
+    // Inject 'updated_date = now()' if it's an UPDATE query
+    String safeQuery = injectUpdatedDateIfUpdate(query);
+    return new QueryResult(safeQuery, true, null);
+}
+private String injectUpdatedDateIfUpdate(String query) {
+    String lowerQuery = query.toLowerCase();
+    if (lowerQuery.startsWith("update") && lowerQuery.contains("set")) {
+        return query.replaceFirst("(?i)set", "SET updated_date = now(),");
+    }
+    return query;
+    }
