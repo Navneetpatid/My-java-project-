@@ -1,6 +1,8 @@
 package com.hsbc.hap.cer.java;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,22 +15,36 @@ public class JsonComparator {
 
     public static void main(String[] args) {
         try {
-            String jsonData1 = "[\n" +
-                    "  {\"id\": \"1\", \"cr\": \"A\", \"name\": \"John\"},\n" +
-                    "  {\"id\": \"2\", \"cr\": \"B\", \"name\": \"Doe\"}\n" +
-                    "]";
+            boolean readFromFile = true;  // <-- set to false if you want manual paste
 
-            String jsonData2 = "[\n" +
-                    "  {\"id\": \"1\", \"cr\": \"A\", \"name\": \"John\"},\n" +
-                    "  {\"id\": \"2\", \"cr\": \"B\", \"name\": \"DoeUpdated\"},\n" +
-                    "  {\"id\": \"3\", \"cr\": \"C\", \"name\": \"Jane\"}\n" +
-                    "]";
+            String jsonData1;
+            String jsonData2;
+
+            if (readFromFile) {
+                // Provide your file paths here
+                String filePath1 = "C:/Users/YourUser/Documents/file1.json";
+                String filePath2 = "C:/Users/YourUser/Documents/file2.json";
+
+                jsonData1 = new String(Files.readAllBytes(new File(filePath1).toPath()));
+                jsonData2 = new String(Files.readAllBytes(new File(filePath2).toPath()));
+            } else {
+                // Or paste JSON manually
+                jsonData1 = "[\n" +
+                        "  {\"id\": \"1\", \"cr\": \"A\", \"name\": \"John\"},\n" +
+                        "  {\"id\": \"2\", \"cr\": \"B\", \"name\": \"Doe\"}\n" +
+                        "]";
+
+                jsonData2 = "[\n" +
+                        "  {\"id\": \"1\", \"cr\": \"A\", \"name\": \"John\"},\n" +
+                        "  {\"id\": \"3\", \"cr\": \"C\", \"name\": \"Jane\"}\n" +
+                        "]";
+            }
 
             ObjectMapper objectMapper = new ObjectMapper();
             List<Map<String, Object>> list1 = objectMapper.readValue(jsonData1, new TypeReference<List<Map<String, Object>>>() {});
             List<Map<String, Object>> list2 = objectMapper.readValue(jsonData2, new TypeReference<List<Map<String, Object>>>() {});
 
-            // Create maps based only on 'id'
+            // Map by id
             Map<String, Map<String, Object>> map1 = list1.stream()
                     .filter(obj -> obj.containsKey("id"))
                     .collect(Collectors.toMap(obj -> obj.get("id").toString(), obj -> obj));
@@ -84,4 +100,4 @@ public class JsonComparator {
             e.printStackTrace();
         }
     }
-		    }
+	    }
