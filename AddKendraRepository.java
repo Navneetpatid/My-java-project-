@@ -1,40 +1,40 @@
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.*;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
-@Service
-public class CurlEquivalentService {
+public class SimpleCurlRunner {
 
-    private static final Logger logger = LoggerFactory.getLogger(CurlEquivalentService.class);
-    private final RestTemplate restTemplate;
+    public static void main(String[] args) {
+        try {
+            String url = "https://controls.uat.eq.gbm.cloud.hk.hsbc/jon-snow/api/v1/servicenow/hsbcc/itsm/change";
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-    public CurlEquivalentService(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+            // Set GET method and headers
+            con.setRequestMethod("GET");
+            con.setRequestProperty("accept", "application/json");
 
-    public String fetchChangeList() {
-        String url = "https://controls.uat.eq.gbm.cloud.hk.hsbc/jon-snow/api/v1/servicenow/hsbcc/itsm/change";
+            // Get the response code
+            int responseCode = con.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("accept", "application/json");
+            // Read response
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
 
-        HttpEntity<String> entity = new HttpEntity<>(headers);
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
 
-        ResponseEntity<String> response = restTemplate.exchange(
-            url,
-            HttpMethod.GET,
-            entity,
-            String.class
-        );
+            // Print response
+            System.out.println("Response Body:");
+            System.out.println(response.toString());
 
-        if (response.getStatusCode().is2xxSuccessful()) {
-            logger.info("Response received successfully");
-            return response.getBody();
-        } else {
-            logger.error("Failed to fetch data. Status: {}", response.getStatusCode());
-            throw new RuntimeException("Failed to fetch change list");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
-}
+                }
