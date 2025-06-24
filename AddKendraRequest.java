@@ -1,84 +1,69 @@
-package com.example.service;
-
-import com.example.dto.ValidationResponseDTO;
-import com.example.entity.EngagementTarget;
-import com.example.entity.WorkspaceTarget;
-import com.example.entity.CpMaster;
-import com.example.entity.DmzLbMaster;
-import com.example.repository.EngagementRepository;
-import com.example.repository.WorkspaceRepository;
-import com.example.repository.CpMasterRepository;
-import com.example.repository.DmzRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
-
 @Service
-@RequiredArgsConstructor
-public class ValidationService {
+public class ServiceNowClient {
 
-    private final EngagementRepository engagementRepository;
-    private final WorkspaceRepository workspaceRepository;
-    private final CpMasterRepository cpMasterRepository;
-    private final DmzRepository dmzRepository;
+    @Value("${servicenow.username}")
+    private String username;
 
-    public ValidationResponseDTO validateEngagement(String engagementId, String workspace) {
-        ValidationResponseDTO response = new ValidationResponseDTO();
-        StringBuilder logs = new StringBuilder("HAP Database Validation Started | ");
+    @Value("${servicenow.password}")
+    private String password;
 
-        try {
-            // **1. Validate Engagement ID**
-            Optional<EngagementTarget> engagementOpt = engagementRepository.findByEngagementId(engagementId);
-            if (engagementOpt.isEmpty()) {
-                logs.append("Engagement ID not found | ");
-                response.setSuccess(false);
-                response.setErrors("Engagement ID not found");
-                response.setLogs(logs.toString());
-                return response;
-            }
-            EngagementTarget engagement = engagementOpt.get();
-            logs.append("Engagement ID validated | ");
+    @Value("${servicenow.host}")
+    private String snowHost;
 
-            // **2. Validate Workspace**
-            Optional<WorkspaceTarget> workspaceOpt = workspaceRepository.findByEngagementIdAndWorkspace(engagementId, workspace);
-            if (workspaceOpt.isEmpty()) {
-                logs.append("Workspace not found for given Engagement ID | ");
-                response.setSuccess(false);
-                response.setErrors("Workspace not found for given Engagement ID");
-                response.setLogs(logs.toString());
-                return response;
-            }
+    @Value("${servicenow.customHeader}")
+    private String customHeader;
 
-            WorkspaceTarget workspaceEntity = workspaceOpt.get();
-            response.setWorkspace(workspace);
-            response.setDpHost(workspaceEntity.getDpHostUrl());
-            logs.append("Workspace validated | ");
+    private final RestTemplate restTemplate;
 
-            // **3. Fetch CP Admin URL**
-            Optional<CpMaster> cpOpt = cpMasterRepository.findByRegionAndEnvironment(engagement.getRegion(), workspaceEntity.getEnvironment());
-            response.setCp_url(cpOpt.map(CpMaster::getCpAdminApiUrl).orElse(""));
-            logs.append(cpOpt.isPresent() ? "CP Admin URL found | " : "CP Admin URL not found | ");
-
-            // **4. Fetch DMZ Load Balancer**
-            Optional<DmzLbMaster> dmzOpt = dmzRepository.findByRegionAndEnvironment(engagement.getRegion(), workspaceEntity.getEnvironment());
-            response.setDmz_lb(dmzOpt.map(DmzLbMaster::getLoadBalancer).orElse(""));
-            logs.append(dmzOpt.isPresent() ? "DMZ Load Balancer found | " : "DMZ Load Balancer not found | ");
-
-            // **5. Static / Default values for missing fields**
-            response.setMandatoryPlugins("DefaultPluginList"); // Replace with actual logic if needed
-            response.setGbgf("GBGF_Value"); // Fetch dynamically if required
-
-            response.setSuccess(true);
-            response.setLogs(logs.toString());
-            return response;
-
-        } catch (Exception e) {
-            logs.append("Database error: ").append(e.getMessage()).append(" | ");
-            response.setSuccess(false);
-            response.setErrors("Internal Server Error");
-            response.setLogs(logs.toString());
-            return response;
-        }
+    public ServiceNowClient(RestTemplateBuilder builder) {
+        this.restTemplate = builder.build();
     }
-                }
+
+    public Map<String, Object> getChangeDetails(String changeNumber) throws Exception {
+        Map<String, Object> returnMap = new HashMap<>();
+
+        String url = String.format("%s/cto-ea-sn-change/api/v1/hsbcc/itsm/change?number=%s", snowHost, changeNumber);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(username, password);
+        headers.set("xCustomHeaderChg", customHeader);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<ChangeDetailsResponse> response = restTemplate.exchange(
+                url, HttpMethod.GET, entity, ChangeDetailsResponse.class);
+
+        ChangeDetailsResponse snowResponse = response.getBody();
+
+        if (snowResponse == null || !"200".equals(snowResponse.getResult().getResponseSummary().getCode())
+            || !"1".equals(snowResponse.getResult().getResponseSummary().getTotalRecords())) {
+            throw new Exception("Error retrieving change details");
+        }
+
+        ChangeRequest cr = snowResponse.getResult().getChangeRequests();
+
+        returnMap.put("approval", cr.getApproval());
+        returnMap.put("onHold", cr.getOnHold());
+        returnMap.put("refNumber", cr.getNumber());
+        returnMap.put("changeOrderType", cr.getType());
+        returnMap.put("changeOrderSubType", cr.getSubType());
+        returnMap.put("status", cr.getStateDescription());
+        returnMap.put("category", cr.getCategory());
+        returnMap.put("implementingGroup", cr.getAssignmentGroup());
+        returnMap.put("scheduledStartDate", cr.getStartDate());
+        returnMap.put("scheduledEndDate", cr.getEndDate());
+        returnMap.put("chgModel", cr.getChangeModel());
+        returnMap.put("businessService", cr.getBusinessService());
+
+        List<String> CIs = new ArrayList<>();
+        if (cr.getAffectedCIs() != null) {
+            for (String ci : cr.getAffectedCIs()) {
+                CIs.add(ci.toLowerCase());
+            }
+        }
+        returnMap.put("CIs", CIs);
+
+        return returnMap;
+    }
+            
