@@ -1,69 +1,62 @@
-@Service
-public class ServiceNowClient {
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
-    @Value("${servicenow.username}")
-    private String username;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-    @Value("${servicenow.password}")
-    private String password;
+public class CurlRunner {
 
-    @Value("${servicenow.host}")
-    private String snowHost;
+    public static void main(String[] args) {
+        try {
+            String url = "https://controls.uat.eq.gbm.cloud.hk.hsbc/jon-snow/api/v1/servicenow/hsbcc/itsm/change";
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 
-    @Value("${servicenow.customHeader}")
-    private String customHeader;
+            con.setRequestMethod("GET");
+            con.setRequestProperty("accept", "application/json");
 
-    private final RestTemplate restTemplate;
+            int responseCode = con.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
 
-    public ServiceNowClient(RestTemplateBuilder builder) {
-        this.restTemplate = builder.build();
-    }
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder responseContent = new StringBuilder();
 
-    public Map<String, Object> getChangeDetails(String changeNumber) throws Exception {
-        Map<String, Object> returnMap = new HashMap<>();
-
-        String url = String.format("%s/cto-ea-sn-change/api/v1/hsbcc/itsm/change?number=%s", snowHost, changeNumber);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(username, password);
-        headers.set("xCustomHeaderChg", customHeader);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        ResponseEntity<ChangeDetailsResponse> response = restTemplate.exchange(
-                url, HttpMethod.GET, entity, ChangeDetailsResponse.class);
-
-        ChangeDetailsResponse snowResponse = response.getBody();
-
-        if (snowResponse == null || !"200".equals(snowResponse.getResult().getResponseSummary().getCode())
-            || !"1".equals(snowResponse.getResult().getResponseSummary().getTotalRecords())) {
-            throw new Exception("Error retrieving change details");
-        }
-
-        ChangeRequest cr = snowResponse.getResult().getChangeRequests();
-
-        returnMap.put("approval", cr.getApproval());
-        returnMap.put("onHold", cr.getOnHold());
-        returnMap.put("refNumber", cr.getNumber());
-        returnMap.put("changeOrderType", cr.getType());
-        returnMap.put("changeOrderSubType", cr.getSubType());
-        returnMap.put("status", cr.getStateDescription());
-        returnMap.put("category", cr.getCategory());
-        returnMap.put("implementingGroup", cr.getAssignmentGroup());
-        returnMap.put("scheduledStartDate", cr.getStartDate());
-        returnMap.put("scheduledEndDate", cr.getEndDate());
-        returnMap.put("chgModel", cr.getChangeModel());
-        returnMap.put("businessService", cr.getBusinessService());
-
-        List<String> CIs = new ArrayList<>();
-        if (cr.getAffectedCIs() != null) {
-            for (String ci : cr.getAffectedCIs()) {
-                CIs.add(ci.toLowerCase());
+            while ((inputLine = in.readLine()) != null) {
+                responseContent.append(inputLine);
             }
-        }
-        returnMap.put("CIs", CIs);
+            in.close();
 
-        return returnMap;
+            // Parse JSON using Jackson
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(responseContent.toString());
+
+            JsonNode changeRequests = root.path("result").path("change_requests");
+
+            if (changeRequests.isArray()) {
+                for (JsonNode cr : changeRequests) {
+                    String parent = cr.path("parent").asText();
+                    String reason = cr.path("reason").asText(null);
+                    String type = cr.path("type").asText();
+                    String approvalHistory = cr.path("approval_history").asText();
+                    String number = cr.path("number").asText();
+                    String cmdbCi = cr.path("u_affected_cis").asText();
+
+                    System.out.println("=== Change Request ===");
+                    System.out.println("Parent: " + parent);
+                    System.out.println("Reason: " + reason);
+                    System.out.println("Type: " + type);
+                    System.out.println("Approval History: " + approvalHistory);
+                    System.out.println("Number: " + number);
+                    System.out.println("CMDB CI: " + cmdbCi);
+                    System.out.println("======================");
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-            
+}
