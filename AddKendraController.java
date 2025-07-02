@@ -1,71 +1,42 @@
-@Transactional
-public List<QueryResult> executeQueries(List<String> queries) {
-    List<QueryResult> results = new ArrayList<>();
-    if (queries == null || queries.isEmpty()) {
-        results.add(new QueryResult(null, false, "Query list is empty or null"));
-        return results;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+@Service
+public class DeploymentService {
+
+    @Autowired
+    private WebClient webClient;
+
+    public String getDeploymentDetails() {
+        String url = "https://devops.uat.it.global.hsbc/deploycontrol/api/v1/deployments/firehose" +
+                     "?deploymentToolId=c7f606cb-a5a8-45b4-8bae-67b2c6c94817" +
+                     "&date[0]=2025-06-30T00%3A00%3A00.007" +
+                     "&date[1]=2025-06-30T23%3A59%3A59.000Z";
+
+        return webClient.get()
+                .uri(url)
+                .header("Authorization", "Basic NDUyODl0NDIjfZGV20lBaY2FraFVkcVLeHlLS2UQnZWbUhFZU9sa1Bi3BtZjNTNm1qa1I3RjA=")
+                .header("accept", "application/json")
+                .retrieve()
+                .bodyToMono(String.class)
+                .block(); // Blocking call for sync use
     }
+}//next class code below
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
 
-    for (String query : queries) {
-        String trimmedQuery = query.trim();
-        if (trimmedQuery.isEmpty()) continue;
+@Configuration
+public class WebClientConfig {
 
-        QueryResult validationResult = validateAndReconstructQuery(trimmedQuery);
-        if (!validationResult.isSuccess()) {
-            results.add(validationResult);
-            continue;
-        }
-
-        String safeQuery = validationResult.getQuery(); // already validated
-
-        try {
-            int updatedRows = entityManager.createNativeQuery(safeQuery).executeUpdate();
-            if (updatedRows > 0) {
-                results.add(new QueryResult(safeQuery, true, null));
-            } else {
-                results.add(new QueryResult(safeQuery, false, "Query executed but no rows affected."));
-            }
-        } catch (PersistenceException e) {
-            results.add(new QueryResult(safeQuery, false, "Invalid SQL syntax or unknown column/table."));
-        }
+    @Bean
+    public WebClient webClient() {
+        return WebClient.builder().build();
     }
-
-    return results;
-}
-private QueryResult validateAndReconstructQuery(String query) {
-    String lowerQuery = query.toLowerCase();
-
-    if (!(lowerQuery.startsWith("update") || lowerQuery.startsWith("insert") || lowerQuery.startsWith("delete"))) {
-        return new QueryResult(query, false, "Only UPDATE, INSERT, DELETE queries are allowed");
-    }
-
-    if (query.contains(";") || query.contains("--") || lowerQuery.contains("drop") || lowerQuery.contains("alter")) {
-        return new QueryResult(query, false, "Query contains disallowed keywords or special characters.");
-    }
-
-    // Basic table whitelist (enhance this list)
-    String[] allowedTables = {"employee", "orders", "product"}; // Add valid table names
-    boolean tableAllowed = false;
-
-    for (String table : allowedTables) {
-        if (lowerQuery.contains(table)) {
-            tableAllowed = true;
-            break;
-        }
-    }
-
-    if (!tableAllowed) {
-        return new QueryResult(query, false, "Query contains a table not allowed.");
-    }
-
-    // Inject 'updated_date = now()' if it's an UPDATE query
-    String safeQuery = injectUpdatedDateIfUpdate(query);
-    return new QueryResult(safeQuery, true, null);
-}
-private String injectUpdatedDateIfUpdate(String query) {
-    String lowerQuery = query.toLowerCase();
-    if (lowerQuery.startsWith("update") && lowerQuery.contains("set")) {
-        return query.replaceFirst("(?i)set", "SET updated_date = now(),");
-    }
-    return query;
-    }
+}//next class code 
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
