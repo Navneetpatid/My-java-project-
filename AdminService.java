@@ -1,27 +1,19 @@
-package com.janaushadhi.adminservice.service;
+Your requirement in simple terms:
 
-import java.io.IOException;
-import java.util.Map;
-
-import com.janaushadhi.adminservice.requestpayload.AdminRequestPayload;
-import com.janaushadhi.adminservice.requestpayload.ChangeProfileRequest;
-import com.janaushadhi.adminservice.requestpayload.GetAllAdmin;
-import com.janaushadhi.adminservice.requestpayload.RoleRequestPayload;
-
-public interface AdminService {
+1. You already have a working pipeline repository (let’s call it Pipeline-Repo).
 
 
+2. You also have another repository (CER-Repo) which has many APIs.
 
-    public Map<String,Object> addAdmin(AdminRequestPayload adminRequestPayload) throws IOException;
-    public Map<String,Object> addRole(RoleRequestPayload roleRequestPayload) throws IOException;
-    public Map<String,Object> getAllRoles();
-    public Map<String, Object> getAdminById(Long id);
-    public  Map<String,Object> deleteById(Long id);
-    public Map<String,Object> adminStatusUpdate(Long id,short status);
 
-   public Map<String, Object> getAllAdmin(GetAllAdmin getAllAdmin);
+3. In the pipeline, you want to:
 
-	public Map<String, Object> getAdminByEmail(String email);
+Generate a token (using an API from CER-Repo).
 
-    public Map<String,Object> updateAdminProfile(ChangeProfileRequest changeProfileRequest);
-}
+Use that token to call other APIs in CER-Repo.
+
+Send parameters from the pipeline into those API calls.
+
+Save the data in the DB (through the APIs).
+
+	
