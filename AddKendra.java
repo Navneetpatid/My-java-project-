@@ -1,9 +1,9 @@
 pipeline {
     agent any
-    
+
     environment {
-        // Store token in Jenkins credentials for security
-        API_TOKEN = credentials('SNOW_CREDENTIAL_UAT') 
+        // Securely store the token in Jenkins credentials (recommended)
+        API_TOKEN = credentials('SNOW_CREDENTIAL_UAT')
     }
 
     stages {
@@ -12,8 +12,8 @@ pipeline {
                 script {
                     sh """
                         curl --request GET \
-                        'https://cluster1-test:1138/cdp/v1alpha/datamanagementid/HAPCQA0004&namespace=hap.hk' \
-                        --header 'Content-Type: application/json' \
+                        "http://localhost:8080/cer/get/snp/data?engagementId=HAP-COO-40004&namespace=hap-hk-clusterTest123" \
+                        --header "Content-Type: application/json" \
                         --header "X-HSBC-E2E-Trust-Token: ${API_TOKEN}"
                     """
                 }
