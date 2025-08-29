@@ -2,22 +2,22 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'ENGAGEMENT_ID', defaultValue: '', description: 'Enter Engagement ID')
-        string(name: 'WORKSPACE', defaultValue: '', description: 'Enter Workspace name')
+        string(name: 'ENGAGEMENT_ID', defaultValue: 'HAP-COO-40004', description: 'Enter Engagement ID')
+        string(name: 'WORKSPACE', defaultValue: 'hap-hk-clusterTest123', description: 'Enter Workspace')
+    }
+
+    environment {
+        API_URL = "http://192.168.1.50:8080/cer/get/snp/data"
+        TOKEN   = credentials('SNOW_CREDENTIAL_UAT')   // Jenkins Credential ID
     }
 
     stages {
         stage('Generate ServiceNow Token') {
             steps {
                 script {
-                    def cerObj = CER([logger:this, adminVerboseLogging:true])
-                    def token = cerObj.generateToken()
-
-                    if (token == "error") {
-                        error "❌ Token generation failed. Check logs."
-                    } else {
-                        echo "✅ Token generated successfully: ${token}"
-                    }
+                    echo "🔑 Using Jenkins credentials to generate token..."
+                    // Example: if TOKEN is username:password, we can encode or pass directly
+                    env.API_TOKEN = "${TOKEN}"   // save to env for later curl
                 }
             }
         }
@@ -25,24 +25,19 @@ pipeline {
         stage('Fetch Record from CER') {
             steps {
                 script {
-                    def cerObj = CER([logger:this, adminVerboseLogging:true])
+                    echo "📥 Fetching CER Record for engagementId=${params.ENGAGEMENT_ID}, workspace=${params.WORKSPACE}"
 
-                    // 🔹 Use Jenkins parameters dynamically
-                    def engagementId = params.ENGAGEMENT_ID
-                    def workspace = params.WORKSPACE
+                    // Call API with curl
+                    sh """
+                        curl --fail --silent --show-error \\
+                          --request GET "${API_URL}?engagementId=${params.ENGAGEMENT_ID}&namespace=${params.WORKSPACE}" \\
+                          --header "Content-Type: application/json" \\
+                          --header "X-HSBC-E2E-Trust-Token: ${env.API_TOKEN}" \\
+                          -o cer_response.json
+                    """
 
-                    echo "📌 Fetching CER Record for engagementId=${engagementId}, workspace=${workspace}"
-
-                    def record = cerObj.getRecordFromKongCER(engagementId, workspace)
-
-                    if (record == "error") {
-                        error "❌ Failed to fetch record from CER. Check logs."
-                    } else {
-                        echo "📦 Record fetched successfully: ${record}"
-                        
-                        // 🔹 Save response file (cer_response.json) as build artifact
-                        archiveArtifacts artifacts: 'cer_response.json', allowEmptyArchive: true
-                    }
+                    echo "✅ CER record saved as cer_response.json"
+                    archiveArtifacts artifacts: 'cer_response.json', fingerprint: true
                 }
             }
         }
