@@ -1,26 +1,37 @@
-package com.janaushadhi.adminservice.responsepayload;
+def getRecordFromKongSHP(def engagementID, def namespace, def cluster) {
+    def token = generateToken()
+    def returnVal = ""
+    try {
+        echo "Get Record from SHP Data API - Started"
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+        dir(env.WORKSPACE) {
+            def contentType = "Content-Type: application/json;charset=UTF-8"
+            def fileName = "shp_response.json"
+            def url = "${environmentRegisterURL}/cer/get/shp/data?engagementId=${engagementID}&namespace=${namespace}&cluster=${cluster}"
 
-import java.util.List;
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class AddKendraResponsePage {
+            def command = """curl -s -w "%{http_code}" -o ${fileName} \
+                -H "${contentType}" \
+                -H "X-HSBC-E2E-Trust-Token: ${token}" \
+                -X GET "${url}" """
 
-    private Integer pageIndex;
+            if (adminVerboseLogging) {
+                echo "Executing: ${command}"
+            }
 
-    private Integer pageSize;
+            def statusCode = sh(script: command, returnStdout: true).trim()
 
-    private Long totalElement;
-
-    private Integer totalPages;
-
-    private Boolean isLastPage;
-
-    private Boolean isFirstPage;
-
-    private List<AddKendraResponse> addKendraResponseList;
-}
+            if (statusCode != "200") {
+                echo "ERR - Service call to SHP Data API failed. HTTP ${statusCode}"
+                returnVal = "error"
+            } else {
+                def response = readFile(fileName)
+                echo "Response: ${response}"
+                returnVal = response
+            }
+        }
+    } catch (Exception e) {
+        echo "ERR - SHP Data API call failed with unknown error: ${e.message}"
+        returnVal = "error"
+    }
+    return returnVal
+            }
