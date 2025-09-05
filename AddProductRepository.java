@@ -190,3 +190,47 @@ pipeline {
         }
     }
 }
+
+++++++++++
+    pipeline {
+    agent any
+
+    parameters {
+        string(name: 'TABLE_NAME_1', defaultValue: '', description: 'Enter first table name')
+        string(name: 'QUERY_1', defaultValue: '', description: 'Enter first update query')
+        string(name: 'PARAMETERS_1', defaultValue: '', description: 'Enter first parameters (comma separated)')
+        
+        string(name: 'TABLE_NAME_2', defaultValue: '', description: 'Enter second table name')
+        string(name: 'QUERY_2', defaultValue: '', description: 'Enter second update query')
+        string(name: 'PARAMETERS_2', defaultValue: '', description: 'Enter second parameters (comma separated)')
+    }
+
+    stages {
+        stage('Build and Send Updates') {
+            steps {
+                script {
+                    def paramList1 = params.PARAMETERS_1?.trim()?.split(',') as List ?: []
+                    def paramList2 = params.PARAMETERS_2?.trim()?.split(',') as List ?: []
+
+                    def updates = [
+                        [
+                            tableName : params.TABLE_NAME_1,
+                            query     : params.QUERY_1,
+                            parameters: paramList1
+                        ],
+                        [
+                            tableName : params.TABLE_NAME_2,
+                            query     : params.QUERY_2,
+                            parameters: paramList2
+                        ]
+                    ]
+
+                    echo "Generated Update Payload: ${groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(updates))}"
+
+                    def update = CERUpdate(config:[logger:this, adminVerboseLogging:true])
+                    def result = update.updateShpData(updates)
+                }
+            }
+        }
+    }
+}
