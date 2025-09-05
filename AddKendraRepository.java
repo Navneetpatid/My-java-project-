@@ -1,40 +1,61 @@
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+def addShpData(def engagementId, def einId, def platform, def bgpF, def namespace,
+               def cluster, def environment, def project, def region, def proxy,
+               def deployUtilityName, def helmChartNexusUrl, def gcpNode) {
+    def token = generateToken()
+    def returnVal = ""
+    try {
+        echo "Add SHP Data API - Started"
 
-public class SimpleCurlRunner {
+        dir(env.WORKSPACE) {
+            def contentType = "Content-Type: application/json;charset=UTF-8"
+            def fileName = "add_shp_response.json"
+            def url = "${environmentRegisterURL}/cer/add/shp/data"
 
-    public static void main(String[] args) {
-        try {
-            String url = "https://controls.uat.eq.gbm.cloud.hk.hsbc/jon-snow/api/v1/servicenow/hsbcc/itsm/change";
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            // Build JSON payload exactly like Postman
+            def jsonPayload = """{
+                "engagementId": "${engagementId}",
+                "einId": "${einId}",
+                "platform": "${platform}",
+                "bgpF": "${bgpF}",
+                "namespace": "${namespace}",
+                "cluster": "${cluster}",
+                "environment": "${environment}",
+                "project": "${project}",
+                "region": "${region}",
+                "proxy": "${proxy}",
+                "deploy_utility_name": "${deployUtilityName}",
+                "helm_chart_nexus_url": "${helmChartNexusUrl}",
+                "gcpNode": "${gcpNode}"
+            }"""
 
-            // Set GET method and headers
-            con.setRequestMethod("GET");
-            con.setRequestProperty("accept", "application/json");
+            // Save request body to file
+            writeFile file: "shp_request.json", text: jsonPayload
 
-            // Get the response code
-            int responseCode = con.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
+            // Run curl
+            def command = """curl -s -o ${fileName} -w "%{http_code}" \
+                -H "${contentType}" \
+                -H "X-HSBC-E2E-Trust-Token: ${token}" \
+                -X POST "${url}" \
+                --data @shp_request.json"""
 
-            // Read response
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
+            if (adminVerboseLogging) {
+                echo "Executing: ${command}"
             }
-            in.close();
 
-            // Print response
-            System.out.println("Response Body:");
-            System.out.println(response.toString());
+            def statusCode = sh(script: command, returnStdout: true).trim()
 
-        } catch (Exception e) {
-            e.printStackTrace();
+            if (statusCode != "200") {
+                echo "ERR - Service call to Add SHP Data API failed. HTTP ${statusCode}"
+                returnVal = "error"
+            } else {
+                def response = readFile(fileName)
+                echo "Response: ${response}"
+                returnVal = response
+            }
         }
+    } catch (Exception e) {
+        echo "ERR - Add SHP Data API call failed with unknown error: ${e.message}"
+        returnVal = "error"
     }
-                }
+    return returnVal
+}
