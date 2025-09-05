@@ -60,3 +60,97 @@ def updates = [
 
 def result = updateShpData(updates)
 echo "Final Result: ${result}"
++++++++++
+    import groovy.json.JsonOutput
+
+// ----------------------
+// Function to generate token
+// ----------------------
+def generateToken() {
+    return "dummy-token-12345" // Replace with real logic
+}
+
+// ----------------------
+// Function to update SHP Data
+// ----------------------
+def updateShpData(def updatesList) {
+    def token = generateToken()
+    def returnVal = ""
+    try {
+        echo "Update SHP Data API - Started"
+
+        dir(env.WORKSPACE) {
+            def contentType = "Content-Type: application/json;charset=UTF-8"
+            def fileName = "update_shp_response.json"
+            def url = "${environmentRegisterURL}/cer/data/update"
+
+            // Convert updatesList (list of maps) to JSON
+            def jsonPayload = JsonOutput.prettyPrint(JsonOutput.toJson(updatesList))
+
+            // Save request body to file
+            writeFile file: "update_shp_request.json", text: jsonPayload
+
+            // Run curl
+            def command = """curl -s -o ${fileName} -w "%{http_code}" \
+                -H "${contentType}" \
+                -H "X-HSBC-E2E-Trust-Token: ${token}" \
+                -X POST "${url}" \
+                --data @update_shp_request.json"""
+
+            def statusCode = sh(script: command, returnStdout: true).trim()
+
+            if (statusCode != "200") {
+                echo "❌ ERR - Service call to Update SHP Data API failed. HTTP ${statusCode}"
+                returnVal = "error"
+            } else {
+                def response = readFile(fileName)
+                echo "✅ Response: ${response}"
+                returnVal = response
+            }
+        }
+    } catch (Exception e) {
+        echo "❌ ERR - Update SHP Data API call failed: ${e.message}"
+        returnVal = "error"
+    }
+    return returnVal
+}
+
+// ----------------------
+// PIPELINE
+// ----------------------
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'ENGAGEMENT_ID', defaultValue: '123259', description: 'Enter Engagement ID')
+        string(name: 'EIN_ID', defaultValue: 'HAP-COD-40009', description: 'Enter EIN ID')
+        string(name: 'ENVIRONMENT', defaultValue: 'ppd', description: 'Enter Environment')
+        string(name: 'NAMESPACE', defaultValue: 'hap-hdc-cicd-113', description: 'Enter Namespace')
+    }
+
+    stages {
+        stage("Update SHP Data") {
+            steps {
+                script {
+                    // ✅ Build updatesList dynamically from Jenkins parameters
+                    def updates = [
+                        [
+                            tableName : "engagement_register_shp",
+                            query     : "UPDATE engagement_register_shp SET ein_id = ? WHERE engagement_id = ?",
+                            parameters: [params.ENGAGEMENT_ID, params.EIN_ID]
+                        ],
+                        [
+                            tableName : "engagement_register_shp",
+                            query     : "UPDATE engagement_register_shp SET environment = ? WHERE namespace = ?",
+                            parameters: [params.ENVIRONMENT, params.NAMESPACE]
+                        ]
+                    ]
+
+                    // Call function
+                    def result = updateShpData(updates)
+                    echo "🎯 Final result: ${result}"
+                }
+            }
+        }
+    }
+            }
