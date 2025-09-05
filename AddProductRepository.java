@@ -154,3 +154,39 @@ pipeline {
         }
     }
             }
+++++++++
+    @Library('licenses_test@licensespoc3') _
+
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'TABLE_NAME', defaultValue: '', description: 'Enter Table Name')
+        string(name: 'QUERY', defaultValue: '', description: 'Enter Update Query (use ? for params)')
+        string(name: 'PARAMETERS', defaultValue: '', description: 'Enter Parameters (comma separated)')
+    }
+
+    stages {
+        stage('Build Update Payload') {
+            steps {
+                script {
+                    // Convert comma-separated params into List
+                    def paramList = params.PARAMETERS.split(',')*.trim()
+
+                    // Build updates list dynamically
+                    def updates = [[
+                        tableName : params.TABLE_NAME,
+                        query     : params.QUERY,
+                        parameters: paramList
+                    ]]
+
+                    echo "Generated Update Payload: ${updates}"
+
+                    // Call backend function from CERUpdate.groovy
+                    def result = updateShpData(updates)
+                    echo "Final Result: ${result}"
+                }
+            }
+        }
+    }
+}
