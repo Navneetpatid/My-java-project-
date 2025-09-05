@@ -85,3 +85,15 @@ pipeline {
         }
     }
 }
+
+def result = kong.addKongData(
+    params.ENGAGEMENT_ID,
+    params.MANDATORY_PLUGIN,
+    params.REGION,
+    params.NETWORK_REGION,
+    params.DP_PLATFORM,
+    params.BGPF,
+    params.WORKSPACE,
+    params.ENVIRONMENT,
+    params.DP_HOST_URL
+)
