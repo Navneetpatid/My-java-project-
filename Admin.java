@@ -1,7 +1,2 @@
-def statusCode = sh(script: """#!/bin/bash
-set +x
-curl -s -w "%{http_code}" -o ${fileName} \
-    -H "${contentType}" \
-    -H "X-HSBC-E2E-Trust-Token: ${token}" \
-    -X GET "${url}"
-""", returnStdout: true).trim()
+<b>Note:</b> This parameter is applicable only if deploy utility is <b>Helm</b>.<br>
+Example: https://nexus.company.com/repository/helm/
