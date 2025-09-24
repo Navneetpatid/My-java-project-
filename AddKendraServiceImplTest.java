@@ -1,48 +1,36 @@
-def generateToken() {
-    def token = "error"
-    try {
-        withCredentials([usernamePassword(credentialsId: 'SNOW_CREDENTIAL_UAT', 
-                                          passwordVariable: 'PASSWORD', 
-                                          usernameVariable: 'USER')]) {
-            
-            def requestJSON = """
-            {
-              "input_token_state": {
-                "token_type": "CREDENTIAL",
-                "username": "${USER}",
-                "password": "${PASSWORD}"
-              },
-              "output_token_state": {
-                "token_type": "jwt"
-              }
-            }
-            """
-            
-            def fileName = "response.json"
-            def url = "http://your-api-url.com/auth"   // 🔹 replace with actual URL
+def call() {
+    stage('Print Parameters') {
+        echo "Engagement ID: ${params.engagementid}"
+        echo "EIM ID: ${params.eimid}"
+        echo "URL: ${params.URL}"
+        echo "Email ID: ${params.Email_Id}"
+    }
 
-            // curl runs silently (-s), no printing request
-            def command = """
-                curl -s -o ${fileName} -w "%{http_code}" \
-                -H "Content-Type: application/json;charset=UTF-8" \
-                -X POST "${url}" \
-                --data '${requestJSON.replaceAll("\\s+", " ")}'
-            """
-
-            def statusCode = sh(script: command, returnStdout: true).trim()
-            
-            if (statusCode != "200") {
-                echo "ERR - Token generation failed. HTTP ${statusCode}"
-            } else {
-                def response = readFile(fileName)
-                def jsonResponse = new groovy.json.JsonSlurper().parseText(response)
-                token = jsonResponse.issued_token
-                echo "Token generation - Success"   // ✅ only success message
+    stage('Split and Print URL') {
+        script {
+            def parts = params.URL.tokenize('/')
+            echo "URL Parts:"
+            parts.each { part ->
+                echo part
             }
         }
-    } catch (Exception e) {
-        echo "ERR - Token generation call failed with unknown error"
-        token = "error"
     }
-    return token
+
+    stage('Send Email') {
+        def emailBody = """
+            <h3>Pipeline Execution Details</h3>
+            <ul>
+                <li><b>ENGAGEMENT_ID:</b> ${params.engagementid}</li>
+                <li><b>EIM_ID:</b> ${params.eimid}</li>
+                <li><b>URL:</b> ${params.URL}</li>
+            </ul>
+        """
+
+        emailext(
+            to: "${params.Email_Id}",
+            subject: "Pipeline Execution Report - ${params.engagementid}",
+            body: emailBody,
+            mimeType: 'text/html'
+        )
+    }
 }
