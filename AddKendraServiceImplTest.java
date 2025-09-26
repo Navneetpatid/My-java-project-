@@ -19,6 +19,19 @@ def call() {
                 def offlineNodeList = offlineNodes.collect { it.displayName.trim() }
                 def onlineNodeList  = onlineNodes.collect { it.displayName.trim() }
 
+                // --- Print in console ---
+                if (offlineNodeList) {
+                    println "Offline Nodes: ${offlineNodeList.join(', ')}"
+                } else {
+                    println "No offline nodes found."
+                }
+
+                if (onlineNodeList) {
+                    println "Online Nodes: ${onlineNodeList.join(', ')}"
+                } else {
+                    println "No online nodes found."
+                }
+
                 // --- Build email body ---
                 def emailBody = """
                 <h3>Node Availability</h3>
@@ -35,7 +48,7 @@ def call() {
                 offlineNodeList.each { nodeName ->
                     emailBody += """
                       <tr>
-                        <td style="padding: 8px;">Agent</td>
+                        <td style="padding: 8px;">Offline Node</td>
                         <td style="padding: 8px;">${nodeName}</td>
                         <td style="padding: 8px; color: red;">Failed</td>
                       </tr>
@@ -46,7 +59,7 @@ def call() {
                 onlineNodeList.each { nodeName ->
                     emailBody += """
                       <tr>
-                        <td style="padding: 8px;">Agent</td>
+                        <td style="padding: 8px;">Online Node</td>
                         <td style="padding: 8px;">${nodeName}</td>
                         <td style="padding: 8px; color: green;">Success</td>
                       </tr>
