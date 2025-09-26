@@ -1,7 +1,11 @@
 stage('Send Email') {
-    // Hardcoded values
-    def offlineNodes = ["20099424", "AI-ML-BOX", "AIML_hk125079141.hc.cloud.hk.hsbc", "cm-linux-gb125048486"]
-    def onlineNodes = ["Built-In Node", "cm-linux-20098327", "cm-linux-20099424", "cm-windows-25048493"]
+    // Hardcoded values as comma-separated strings
+    def offlineNodes = "20099424, AI-ML-BOX, AIML_hk125079141.hc.cloud.hk.hsbc, cm-linux-gb125048486"
+    def onlineNodes = "Built-In Node, cm-linux-20098327, cm-linux-20099424, cm-windows-25048493"
+
+    // Convert strings into lists (split by comma and trim spaces)
+    def offlineNodeList = offlineNodes.split(",").collect { it.trim() }
+    def onlineNodeList = onlineNodes.split(",").collect { it.trim() }
 
     def emailBody = """
         <h3>Node Availability</h3>
@@ -16,7 +20,7 @@ stage('Send Email') {
     """
 
     // Add offline nodes with Failed status
-    offlineNodes.each { node ->
+    offlineNodeList.each { node ->
         emailBody += """
             <tr>
                 <td style="padding: 8px;">Offline Node</td>
@@ -27,7 +31,7 @@ stage('Send Email') {
     }
 
     // Add online nodes with Success status
-    onlineNodes.each { node ->
+    onlineNodeList.each { node ->
         emailBody += """
             <tr>
                 <td style="padding: 8px;">Online Node</td>
