@@ -8,24 +8,11 @@ stage('Send Email') {
         <table border="1" style="border-collapse: collapse; width: 100%;">
             <tr>
                 <th style="padding: 8px; text-align: left;">Offline Nodes</th>
-                <td style="padding: 8px;">${params.offlineNodes}</td>
+                <td style="padding: 8px;">${offlineNodes}</td>
             </tr>
             <tr>
                 <th style="padding: 8px; text-align: left;">Online Nodes</th>
-                <td style="padding: 8px;">${params.onlineNodes}</td>
-            </tr>
-        </table>
-        
-        <br/>
-        <h3>Use the below values while running the Production Pipeline:</h3>
-        <table border="1" style="border-collapse: collapse; width: 100%;">
-            <tr>
-                <th style="padding: 8px; text-align: left;">Release Nexus Version</th>
-                <td style="padding: 8px;">${params.releaseNexusVersionUrl}</td>
-            </tr>
-            <tr>
-                <th style="padding: 8px; text-align: left;">Rollback Nexus Version</th>
-                <td style="padding: 8px;">${params.rollbackNexusVersionUrl}</td>
+                <td style="padding: 8px;">${onlineNodes}</td>
             </tr>
         </table>
     """
