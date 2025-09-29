@@ -1,87 +1,142 @@
 // Example 1: Hello World
-node {
-    stage('Hello') {
-        echo 'Hello World'
+pipeline {
+    agent any
+    stages {
+        stage('Hello') {
+            steps {
+                echo 'Hello World'
+            }
+        }
     }
 }
 
-// Example 2: Run Shell Command
-node {
-    stage('Shell Command') {
-        sh 'echo Running a simple shell command'
+// Example 2: Run a Shell Command
+pipeline {
+    agent any
+    stages {
+        stage('Shell') {
+            steps {
+                sh 'echo Running a simple shell command'
+            }
+        }
     }
 }
 
 // Example 3: Checkout from Git
-node {
-    stage('Checkout') {
-        git 'https://github.com/example/repo.git'
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/example/repo.git'
+            }
+        }
     }
 }
 
 // Example 4: Build with Maven
-node {
-    stage('Build') {
-        sh 'mvn clean package'
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
     }
 }
 
 // Example 5: Run Unit Tests
-node {
-    stage('Test') {
-        sh 'mvn test'
+pipeline {
+    agent any
+    stages {
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
     }
 }
 
 // Example 6: Multiple Stages (Build + Test)
-node {
-    stage('Build') {
-        sh 'echo Building project...'
-    }
-    stage('Test') {
-        sh 'echo Running tests...'
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building project...'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+            }
+        }
     }
 }
 
 // Example 7: Use Environment Variables
-node {
-    stage('Env Vars') {
-        env.MY_VAR = "HelloEnv"
-        sh 'echo "Value of MY_VAR is $MY_VAR"'
+pipeline {
+    agent any
+    environment {
+        MY_VAR = "HelloEnv"
+    }
+    stages {
+        stage('Env Vars') {
+            steps {
+                sh 'echo "Value of MY_VAR is $MY_VAR"'
+            }
+        }
     }
 }
 
 // Example 8: Parallel Stages
-node {
-    stage('Parallel Jobs') {
-        parallel(
-            job1: {
-                sh 'echo Job 1 running'
-            },
-            job2: {
-                sh 'echo Job 2 running'
+pipeline {
+    agent any
+    stages {
+        stage('Parallel Jobs') {
+            parallel {
+                stage('Job 1') {
+                    steps { echo 'Job 1 running' }
+                }
+                stage('Job 2') {
+                    steps { echo 'Job 2 running' }
+                }
             }
-        )
+        }
     }
 }
 
 // Example 9: Post-Build Actions
-node {
-    try {
+pipeline {
+    agent any
+    stages {
         stage('Main Task') {
-            sh 'exit 1' // simulate failure
+            steps {
+                script {
+                    error("Simulating failure")
+                }
+            }
         }
-    } catch (err) {
-        echo "Build failed: ${err}"
-    } finally {
-        echo "Cleaning up..."
+    }
+    post {
+        success { echo "Build Success!" }
+        failure { echo "Build Failed!" }
+        always { echo "Cleaning up..." }
     }
 }
 
 // Example 10: Pipeline with Parameters
-node {
-    stage('Run with Params') {
-        def name = params.USER_NAME ?: 'DefaultUser'
-        echo "Hello ${name}, your build is running!"
+pipeline {
+    agent any
+    parameters {
+        string(name: 'USER_NAME', defaultValue: 'DefaultUser', description: 'Enter your name')
+    }
+    stages {
+        stage('Greeting') {
+            steps {
+                echo "Hello ${params.USER_NAME}, your build is running!"
+            }
+        }
     }
 }
