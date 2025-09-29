@@ -1,109 +1,38 @@
-pipeline {
-    agent any
-
-    parameters {
-        string(name: 'USER', defaultValue: 'Student', description: 'Enter your name')
-    }
-
-    environment {
-        COURSE = "Jenkins Basics"
-        AUTHOR = "Trainer"
-    }
-
-    stages {
-        // Example 1: Hello World
-        stage('Example 1 - Hello World') {
-            steps {
-                echo 'Hello Jenkins! 🎉'
-            }
+{
+  "configuration": {
+    "hapEngagementID": "HAP-CTO-000",
+    "emailDistributionList": "chetan.radke@hsbc.co.in",
+    "workspace": "HAP-HK-CTO-000-PRD",
+    "deployToDmz": "disable",
+    "oasFilePath": "./oas-PRD.yaml",
+    "action": "deploy",
+    "plugins": [
+      {
+        "name": "rate-limiting",
+        "enabled": true,
+        "config": {
+          "second": 5,
+          "hour": 10000,
+          "policy": "local",
+          "fault_tolerant": true,
+          "hide_client_headers": false
         }
-
-        // Example 2: Multiple Stages in One
-        stage('Example 2 - Multiple Steps') {
-            steps {
-                echo 'This is Step 1'
-                echo 'This is Step 2'
-            }
-        }
-
-        // Example 3: Run Shell Command
-        stage('Example 3 - Shell Command') {
-            steps {
-                sh 'echo "Hello from Linux shell command"'
-            }
-        }
-
-        // Example 4: Parameters
-        stage('Example 4 - Parameters') {
-            steps {
-                echo "Hello ${params.USER}, welcome to Jenkins pipeline!"
-            }
-        }
-
-        // Example 5: Environment Variables
-        stage('Example 5 - Environment Variables') {
-            steps {
-                echo "Course: ${env.COURSE}"
-                echo "Author: ${env.AUTHOR}"
-            }
-        }
-
-        // Example 6: Parallel Stages
-        stage('Example 6 - Parallel Example') {
-            parallel {
-                stage('Job A') {
-                    steps { echo 'Running Job A in parallel' }
-                }
-                stage('Job B') {
-                    steps { echo 'Running Job B in parallel' }
-                }
-            }
-        }
-
-        // Example 7: Post Actions (inside stage simulation)
-        stage('Example 7 - Post Simulation') {
-            steps {
-                echo 'Pretend: Main task running'
-                echo 'If it fails, post will handle it (see below)'
-            }
-        }
-
-        // Example 8: Loop
-        stage('Example 8 - Loop Example') {
-            steps {
-                script {
-                    for (int i = 1; i <= 3; i++) {
-                        echo "Loop count: ${i}"
-                    }
-                }
-            }
-        }
-
-        // Example 9: Conditional (When)
-        stage('Example 9 - Conditional') {
-            when {
-                expression { return true }  // always true for demo
-            }
-            steps {
-                echo 'This stage runs only if condition is true'
-            }
-        }
-
-        // Example 10: Mini CI/CD Flow
-        stage('Example 10 - Mini CI/CD') {
-            steps {
-                echo 'Pretend: Checkout code...'
-                echo 'Pretend: Build project...'
-                echo 'Pretend: Run tests...'
-                echo 'Pretend: Package artifacts...'
-                echo 'Pretend: Deploy to staging...'
-            }
-        }
-    }
-
-    post {
-        success { echo '✅ Pipeline finished successfully!' }
-        failure { echo '❌ Pipeline failed!' }
-        always  { echo '🔄 Always running cleanup step' }
-    }
-}
+      }
+    ]
+  },
+  "pipelineData": {
+    "deployControlSummery": "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\nChange Request No       CHG5772410\nCR Status               Implement\nChange Order Type       normal\nChange Order Sub Type   null\nChange Model            \nScheduled Start Date    2025-09-02 10:10:00\nScheduled End Date      2025-09-02 13:10:00\nImplementing Group      CTO-HAP-OpenTelemetry\nCurrent Timestamp       2025-09-02 11:48:16 BST\n\n4.1   CR has valid Change Order Type   : Success\n4.1.1 CR has valid Change Model Type   : Success\n4.2   CR has valid Category            : Success\n4.7   CR is not On-HOLD Status         : Success\n4.8   CR status is Approved            : Success\n4.10  CR Implementation Window is Valid: Success\n4.11  CR is in Implement Status        : Success\n4.12  Package ID Validation            : Success\n4.17  HAP Deployment Service is registered to this Application in ICE : Success\n5.1   Implementer access validation    : Success\n\n*********************************** CR Validation Passed ***********************************\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+    "id": "680139af-3b04-47a9-85cb-dc8c5ee8ea72",
+    "component": "kong",
+    "purl": "pkg:docker/hsbc-11298320-ctoinfra/hapds/docker/boot-oas-ds@2.0.1_95_273f175",
+    "rollbackArtifactInstance": "nexus3.systems.uk.hsbc:18082&artifactRepo=docker-hsbc-internal-prd_n3p&checksum=sha256:35854e26653166309a43e2fd217dd32c9c0345b90dce2f88eb89260ead59278&rollbackchecksum",
+    "config": "https://nexus304.systems.uk.hsbc:8081/nexus/repository/maven-hsbc-internal-prod_n3p/com/hsbc/hap/deployment/service/values_configs/boot-oas-ds-test/0.0.5/boot-oas-ds-test-0.0.5.zip&rollbackconfig=",
+    "eimIds": [
+      "12409291"
+    ],
+    "version": "2.0.1_95_273f175",
+    "tags": [
+      "deploy"
+    ]
+  }
+        
