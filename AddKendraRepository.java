@@ -1,103 +1,96 @@
-def addShpData(def engagementId, def einId, def platform, def bgpF, def namespace,
-               def cluster, def environment, def project, def region, def proxy,
-               def deployUtilityName, def helmChartNexusUrl, def gcpNode) {
-    def token = generateToken()
-    def returnVal = ""
-    try {
-        echo "Add SHP Data API - Started"
+import groovy.json.JsonOutput
+import groovy.transform.Field
 
-        dir(env.WORKSPACE) {
-            def contentType = "Content-Type: application/json;charset=UTF-8"
-            def fileName = "add_shp_response.json"
-            def url = "${environmentRegisterURL}/cer/add/shp/data"
+@Field def logger = new Logger()
 
-            // Build JSON payload exactly like Postman
-            def jsonPayload = """{
-                "engagementId": "${engagementId}",
-                "einId": "${einId}",
-                "platform": "${platform}",
-                "bgpF": "${bgpF}",
-                "namespace": "${namespace}",
-                "cluster": "${cluster}",
-                "environment": "${environment}",
-                "project": "${project}",
-                "region": "${region}",
-                "proxy": "${proxy}",
-                "deploy_utility_name": "${deployUtilityName}",
-                "helm_chart_nexus_url": "${helmChartNexusUrl}",
-                "gcpNode": "${gcpNode}"
-            }"""
+def call() {
+    node {
+        try {
+            stage('Load Hardcoded Config') {
+                def config = getDeploymentConfig()
 
-            // Save request body to file
-            writeFile file: "shp_request.json", text: jsonPayload
+                logger.info("Workspace: ${config.configuration.workspace}")
+                logger.info("Action: ${config.configuration.action}")
+                logger.info("Pipeline Branch: ${config.jobParam.pipelineGITBranch}")
+                logger.info("Build User: ${config.job.buildUser}")
+                logger.info("Central Env API URL: ${config.centralEnvironmentRegister.cp_admin_api_url}")
 
-            // Run curl
-            def command = """curl -s -o ${fileName} -w "%{http_code}" \
-                -H "${contentType}" \
-                -H "X-HSBC-E2E-Trust-Token: ${token}" \
-                -X POST "${url}" \
-                --data @shp_request.json"""
-
-            if (adminVerboseLogging) {
-                echo "Executing: ${command}"
+                // Print full JSON in logs (optional)
+                println "======== FULL CONFIG ========"
+                println JsonOutput.prettyPrint(JsonOutput.toJson(config))
             }
-
-            def statusCode = sh(script: command, returnStdout: true).trim()
-
-            if (statusCode != "200") {
-                echo "ERR - Service call to Add SHP Data API failed. HTTP ${statusCode}"
-                returnVal = "error"
-            } else {
-                def response = readFile(fileName)
-                echo "Response: ${response}"
-                returnVal = response
-            }
-        }
-    } catch (Exception e) {
-        echo "ERR - Add SHP Data API call failed with unknown error: ${e.message}"
-        returnVal = "error"
-    }
-    return returnVal
-}
-
-@Library('License_test@licenspec03') _ pipeline { agent any parameters { string(name: 'ENGAGEMENT_ID', defaultValue: 'HAP-COO-40010', description: 'Enter Engagement ID') string(name: 'EIN_ID', defaultValue: '1237', description: 'Enter EIN ID') string(name: 'PLATFORM', defaultValue: 'IKP', description: 'Enter Platform') string(name: 'BGPF', defaultValue: 'COO IT', description: 'Enter BGPF') string(name: 'NAMESPACE', defaultValue: 'hap-hk-cto-113', description: 'Enter Namespace') string(name: 'CLUSTER', defaultValue: 'ClusterTest123', description: 'Enter Cluster') string(name: 'ENVIRONMENT', defaultValue: 'DEV', description: 'Enter Environment') string(name: 'PROJECT', defaultValue: 'testProject1245', description: 'Enter Project') string(name: 'REGION', defaultValue: 'UK', description: 'Enter Region') string(name: 'PROXY', defaultValue: '1345', description: 'Enter Proxy') string(name: 'DEPLOY_UTILITY_NAME', defaultValue: 'deploy123', description: 'Enter Deploy Utility Name') string(name: 'HELM_CHART_NEXUS_URL', defaultValue: 'https://anypoint.mulesoft.com', description: 'Enter Helm Chart Nexus URL') string(name: 'GCP_NODE', defaultValue: 'node1234', description: 'Enter GCP Node') }
-
-environment {
-    TOKEN = credentials('SNOW_CREDENTIAL_UAT') // Jenkins Credential ID
-}
-
-stages {
-    stage('Generate ServiceNow Token') {
-        steps {
-            script {
-                env.API_TOKEN = "${TOKEN}"
-            }
-        }
-    }
-
-    stage('Fetch Add SHP Data') {
-        steps {
-            script {
-                def result = kong.addShpData(
-                    params.ENGAGEMENT_ID,
-                    params.EIN_ID,
-                    params.PLATFORM,
-                    params.BGPF,
-                    params.NAMESPACE,
-                    params.CLUSTER,
-                    params.ENVIRONMENT,
-                    params.PROJECT,
-                    params.REGION,
-                    params.PROXY,
-                    params.DEPLOY_UTILITY_NAME,
-                    params.HELM_CHART_NEXUS_URL,
-                    params.GCP_NODE
-                )
-            }
+        } catch (Exception e) {
+            logger.error("Error loading config: ${e.message}")
+            throw e
         }
     }
 }
 
-}
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+/**
+ * Hardcoded deployment config as Map
+ */
+def getDeploymentConfig() {
+    return [
+        configuration: [
+            hapEngagementID      : "HAP-CTO-000",
+            emailDistributionList: "chetan.radke@hsbc.co.in",
+            workspace            : "HAP-HK-CTO-000-PRD",
+            deployToDmz          : "disable",
+            oasFilePath          : "./oas-PRD.yaml",
+            action               : "deploy",
+            plugins              : [
+                [
+                    name   : "rate-limiting",
+                    enabled: true,
+                    config : [
+                        second            : 5,
+                        hour              : 10000,
+                        policy            : "local",
+                        fault_tolerant    : true,
+                        hide_client_headers: false
+                    ]
+                ]
+            ]
+        ],
+        pipelineData: [
+            deployControlSummery: "CR Validation Passed",
+            id                  : "680139af-3b04-47a9-85cb-dc8c5ee8ea72",
+            component           : "kong",
+            purl                : "pkg:docker/hsbc-11298320-ctoinfra/hapds/docker/boot-oas-ds@2.0.1_95_273f175",
+            rollbackArtifactInstance: "nexus3.systems.uk.hsbc:18082...",
+            config              : "https://nexus304.systems.uk.hsbc:8081/.../boot-oas-ds-test-0.0.5.zip",
+            eimIds              : ["12409291"],
+            version             : "2.0.1_95_273f175",
+            tags                : ["deploy"]
+        ],
+        jobParam: [
+            pipelineGITBranch     : "Release-3.2.6",
+            targetEnvironment     : "PRE-PROD",
+            configurationYMLPath  : "https://nexus304.systems.uk.hsbc:8081/.../boot-oas-ds-kong-deploy-prd-0.0.2.zip",
+            snowCR                : "CHG5772410",
+            verboseLogging        : true
+        ],
+        job: [
+            buildNumber : "9",
+            buildUser   : "Prajwal Dongare (45456560)",
+            buildURL    : "https://alm-jenkins207.hc.cloud.uk.hsbc:8706/job/HAP_Kong/job/HAP-CTO-000/job/PRD/job/hap-deployment-service-KONG-PROD/9/",
+            error       : [[
+                errorCode   : "ERR102",
+                errorMessage: "CR validation failed with some checks"
+            ]],
+            buildStart  : "2025-09-02 09:56:16.830",
+            buildEnd    : "2025-09-02 09:56:45.499",
+            buildStatus : "Failed"
+        ],
+        centralEnvironmentRegister: [
+            success : true,
+            errors  : [],
+            workspace: "HAP-HK-CTO-000-PRD",
+            cp_admin_api_url: "https://kcphk-prod.hsbc-11383538-kongcphk-prod.prod.gcp.cloud.hk.hsbc",
+            mandatoryPlugins: ["rate-limiting"],
+            dp_host_url     : "kdp2hk-prod.ikp401.cloud.hk.hsbc",
+            gbgf            : "CTO",
+            dmz_Lb          : "hap-api-gw-stk.hk.hsbc, hap-api-gw-sx.hk.hsbc"
+        ]
+    ]
+      }
