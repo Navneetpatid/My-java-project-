@@ -1,30 +1,30 @@
+package com.hsbc.hap
 
-import groovy.transform.Field
+class CentralEnvironmentRegister {
+    Boolean success
+    String errors
+    List<String> workspace
+    String cp_admin_api_url
+    String prod_gcp_cloud_url
+    List<String> mandatoryPlugins
+    String dp_host_url
+    String gbgf
+    String dmzLb
+    String logs
 
-@Field String grcNode = "cm-linux-cjoc"
-
-def call(Map config) {
-    this.config = config
-
-    node(grcNode) {
-        stage('Print Parameters') {
-            echo "Engagement ID: ${params.engagementid}"
-            echo "EIM ID: ${params.eimid}"
-            echo "URL: ${params.URL}"
-        }
-
-        stage('Split and Print URL') {
-            script {
-                def parts = splitUrl(params.URL)
-                echo "URL Parts:"
-                parts.each { part ->
-                    echo part
-                }
-            }
-        }
+    @Override
+    String toString() {
+        return """[CentralEnvironmentRegister] 
+                  success: ${success}, 
+                  errors: ${errors}, 
+                  workspace: ${workspace}, 
+                  cp_admin_api_url: ${cp_admin_api_url}, 
+                  prod_gcp_cloud_url: ${prod_gcp_cloud_url}, 
+                  mandatoryPlugins: ${mandatoryPlugins}, 
+                  dp_host_url: ${dp_host_url}, 
+                  gbgf: ${gbgf}, 
+                  dmzLb: ${dmzLb}, 
+                  logs: ${logs}
+               """
     }
-}
-
-def splitUrl(String url) {
-    return url.tokenize(".")
-}
+            }
