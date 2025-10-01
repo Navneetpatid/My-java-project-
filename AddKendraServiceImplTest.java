@@ -1,28 +1,23 @@
 package com.hsbc.hap
 
-class PipelineData {
-    String deployControlSummery
-    String id
-    String component
-    String purl
-    String rollbackArtifactInstance
-    String config
-    List<String> eimIds = []
-    String version
-    List<String> tags = []
+class MIEvent {
+    Job job = new Job()
+    JobParam jobParam = new JobParam()
+    CER cer = new CER()
+    App app = new App()
+    Configuration configuration = new Configuration()
+    PipelineData pipelineData = new PipelineData()
+    CentralEnvironmentRegistry centralEnvironmentRegistry = new CentralEnvironmentRegistry()
 
-    @Override
     String toString() {
-        return """[PipelineData]
-        deployControlSummery      : ${deployControlSummery}
-        id                        : ${id}
-        component                 : ${component}
-        purl                      : ${purl}
-        rollbackArtifactInstance  : ${rollbackArtifactInstance}
-        config                    : ${config}
-        eimIds                    : ${eimIds}
-        version                   : ${version}
-        tags                      : ${tags}
+        return """[MIEvent]
+        job              : ${job},
+        jobParam         : ${jobParam},
+        cer              : ${cer},
+        app              : ${app},
+        configuration    : ${configuration},
+        pipelineData     : ${pipelineData},
+        centralEnvReg    : ${centralEnvironmentRegistry}
         """
     }
-    }
+            }
