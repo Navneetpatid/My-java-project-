@@ -1,47 +1,32 @@
 package com.hsbc.hap
 
-class Configuration {
-
-    // === Top-level configuration fields ===
-    String hapEngagementID
-    String emailDistributionList
-    String workspace
-    String deployToDmz
-    String oasFilePath
-    String action
-
-    // === Plugin details ===
-    String pluginName
-    boolean pluginEnabled
-    int pluginConfigSecond
-    int pluginConfigHour
-    String pluginConfigPolicy
-    boolean pluginConfigFaultTolerant
-    boolean pluginConfigHideClientHeaders
+class ErrorDetail {
+    String errorCode
+    String errorMessage
 
     String toString() {
-        return """{
-  "configuration": {
-    "hapEngagementID": "${hapEngagementID}",
-    "emailDistributionList": "${emailDistributionList}",
-    "workspace": "${workspace}",
-    "deployToDmz": "${deployToDmz}",
-    "oasFilePath": "${oasFilePath}",
-    "action": "${action}",
-    "plugins": [
-      {
-        "name": "${pluginName}",
-        "enabled": ${pluginEnabled},
-        "config": {
-          "second": ${pluginConfigSecond},
-          "hour": ${pluginConfigHour},
-          "policy": "${pluginConfigPolicy}",
-          "fault_tolerant": ${pluginConfigFaultTolerant},
-          "hide_client_headers": ${pluginConfigHideClientHeaders}
-        }
-      }
-    ]
-  }
-}"""
+        return "[ErrorDetail] errorCode: ${errorCode}, errorMessage: ${errorMessage}"
+    }
+}
+
+class Job {
+    String buildNumber
+    String buildUserID
+    String buildURL
+    List<ErrorDetail> error
+    String buildStart
+    String buildEnd
+    String buildStatus
+
+    String toString() {
+        return """[Job]
+    buildNumber : ${buildNumber},
+    buildUserID : ${buildUserID},
+    buildURL    : ${buildURL},
+    buildStart  : ${buildStart},
+    buildEnd    : ${buildEnd},
+    buildStatus : ${buildStatus},
+    error       : ${error}
+"""
     }
     }
