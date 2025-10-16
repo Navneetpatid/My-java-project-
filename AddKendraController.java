@@ -1,45 +1,11 @@
-pipeline {
-    agent any
+Accelerate:
+Actively contributed to improving code efficiency and optimizing Java applications. Focused on continuous improvement, problem-solving, and maintaining high coding standards.
 
-    parameters {
-        string(name: 'ENGAGEMENT_ID', defaultValue: 'HAP-COO-40004', description: 'Enter Engagement ID')
-        string(name: 'WORKSPACE', defaultValue: 'hap-hk-clusterTest123', description: 'Enter Workspace')
-    }
+Trainings:
+Completed trainings on Core & Advanced Java, Spring Boot, Microservices, and REST API development. Enhanced understanding of design patterns and CI/CD pipeline setup.
 
-    environment {
-        API_URL = "http://192.168.1.50:8080/cer/get/snp/data"
-        TOKEN   = credentials('SNOW_CREDENTIAL_UAT')   // Jenkins Credential ID
-    }
+Knowledge Management:
+Contributed reusable Java components and project learnings to the team’s repository. Shared documentation and best practices for Spring Boot and debugging techniques.
 
-    stages {
-        stage('Generate ServiceNow Token') {
-            steps {
-                script {
-                    echo "🔑 Using Jenkins credentials to generate token..."
-                    // Example: if TOKEN is username:password, we can encode or pass directly
-                    env.API_TOKEN = "${TOKEN}"   // save to env for later curl
-                }
-            }
-        }
-
-        stage('Fetch Record from CER') {
-            steps {
-                script {
-                    echo "📥 Fetching CER Record for engagementId=${params.ENGAGEMENT_ID}, workspace=${params.WORKSPACE}"
-
-                    // Call API with curl
-                    sh """
-                        curl --fail --silent --show-error \\
-                          --request GET "${API_URL}?engagementId=${params.ENGAGEMENT_ID}&namespace=${params.WORKSPACE}" \\
-                          --header "Content-Type: application/json" \\
-                          --header "X-HSBC-E2E-Trust-Token: ${env.API_TOKEN}" \\
-                          -o cer_response.json
-                    """
-
-                    echo "✅ CER record saved as cer_response.json"
-                    archiveArtifacts artifacts: 'cer_response.json', fingerprint: true
-                }
-            }
-        }
-    }
-}
+Certification:
+Completed Java and Spring Boot certifications. Strengthened technical expertise through Infosys learning paths and working towards cloud-related certifications
