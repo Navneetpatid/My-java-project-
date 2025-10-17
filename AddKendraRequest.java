@@ -1,35 +1,23 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+@Library('gcr@test_navbeey') _
 
-    <modelVersion>4.0.0</modelVersion>
+pipeline {
+    agent any
 
-    <groupId>org.example</groupId>
-    <artifactId>untitled</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    parameters {
+        choice(name: 'Image_Type', choices: ['Docker'], description: 'Select the image type')
+        choice(name: 'Image_Action', choices: ['Push', 'Pull', 'Skip'], description: 'Select whether to Push, Pull or Skip the image operation')
+        string(name: 'Nexus3_Source_Image', defaultValue: '', description: 'Full Nexus3 image path to pull from (e.g., nexus3.systems.uk.hsbc:8080/com/hsbc/host/app:1.0.0)')
+        string(name: 'Nexus3_Target_Image', defaultValue: '', description: 'Target image name and tag (without gcr.io prefix, e.g., hap/hap-cdr-microservice:1.0.0)')
+    }
 
-    <dependencies>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.15.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.15.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.15.3</version>
-        </dependency>
-    </dependencies>
-
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-</project>
+    stages {
+        stage('Run Docker Image Promotion Pipeline') {
+            steps {
+                script {
+                    // Call shared library helper
+                    dockerPipelineHelper()
+                }
+            }
+        }
+    }
+                     }
