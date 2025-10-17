@@ -1,62 +1,78 @@
 def call(config) {
-    logger.printBlueMessage("==== Docker Image Promotion Pipeline START ====")
+    echo "==== Docker Image Promotion Pipeline START ===="
 
-    if (config.Image_Type != 'Docker') {
-        logger.info("Only Docker image type is supported. Skipping.")
+    // ===== Validate Parameters =====
+    if (!config.Image_Type || config.Image_Type.trim() != 'Docker') {
+        echo "[ERROR] Only Docker image type is supported. Received: ${config.Image_Type}"
         return
     }
 
-    // Jenkins environment variables
-    def gcp_node = 'gcp-node'          // Jenkins agent label
-    def googleProjectId = 'my-google-project' // Change to your GCP project id
+    def gcp_node = 'gcp-node'  // Jenkins node label (update to your actual node)
+    def googleProjectId = 'my-gcp-project' // Replace with your actual project ID
 
-    // Log received parameters
-    logger.info("Parameters Received:")
-    logger.info("  Image_Type        : ${config.Image_Type}")
-    logger.info("  Image_Action      : ${config.Image_Action}")
-    logger.info("  Nexus_Source_Image: ${config.Nexus_Source_Image}")
-    logger.info("  Nexus_Target_Image: ${config.Nexus_Target_Image}")
+    // ===== Print All Parameters =====
+    echo "Parameters Received:"
+    echo "  Image_Type        : ${config.Image_Type}"
+    echo "  Image_Action      : ${config.Image_Action}"
+    echo "  Nexus_Source_Image: ${config.Nexus_Source_Image}"
+    echo "  Nexus_Target_Image: ${config.Nexus_Target_Image}"
 
+    // ===== Run Stage =====
     stage('Docker Image Promotion') {
-        if (config.Image_Action == 'Push') {
-            logger.printBlueMessage("Action Selected: PUSH - Uploading from Nexus3 to GCR")
-            uploadDockerImageToGCR(config.Nexus_Source_Image, config.Nexus_Target_Image, gcp_node, googleProjectId)
+        switch (config.Image_Action) {
+            case 'Push':
+                echo "Action Selected: PUSH → Uploading image from Nexus3 to GCR"
+                uploadDockerImageToGCR(config.Nexus_Source_Image, config.Nexus_Target_Image, gcp_node, googleProjectId)
+                break
 
-        } else if (config.Image_Action == 'Pull') {
-            logger.printBlueMessage("Action Selected: PULL - Pulling Image from GCR")
-            pullDockerImageFromGCR(config.Nexus_Target_Image, gcp_node)
+            case 'Pull':
+                echo "Action Selected: PULL → Pulling image from GCR"
+                pullDockerImageFromGCR(config.Nexus_Target_Image, gcp_node)
+                break
 
-        } else {
-            logger.printYellowMessage("Action Selected: SKIP - No GCR operation will be performed")
+            case 'Skip':
+                echo "Action Selected: SKIP → No Docker operation will be performed"
+                break
+
+            default:
+                echo "[ERROR] Invalid Image_Action value: ${config.Image_Action}. Must be Push / Pull / Skip."
         }
     }
 
-    logger.printGreenMessage("==== Docker Image Promotion Pipeline COMPLETE ====")
+    echo "==== Docker Image Promotion Pipeline COMPLETE ===="
 }
 
 
 //===============================================================
-//  Upload Docker Image to GCR
+// Upload Docker Image to GCR
 //===============================================================
 def uploadDockerImageToGCR(nexusSource, gcrTarget, gcp_node, googleProjectId) {
     node(gcp_node) {
         try {
             stage("Docker: Publish Image to GCR") {
-                logger.printBlueMessage("Push Docker Image to GCR Stage - START")
-                logger.info("Source Nexus3 Image: ${nexusSource}")
-                logger.info("Target GCR Image: ${gcrTarget}")
+                echo "Push Docker Image to GCR Stage - START"
+                echo "Source Nexus3 Image : ${nexusSource}"
+                echo "Target GCR Image    : ${gcrTarget}"
 
-                // assuming 'docker' global var is defined in your shared library
-                docker.pullImage(nexusSource)
-                docker.tagImage(nexusSource, gcrTarget)
-                docker.pushImage(gcrTarget)
+                sh """
+                    echo "Pulling image from Nexus3..."
+                    docker pull ${nexusSource}
 
-                logger.printGreenMessage("Push Docker Image to GCR Stage - COMPLETE")
+                    echo "Tagging image for GCR..."
+                    docker tag ${nexusSource} ${gcrTarget}
+
+                    echo "Authenticating with GCR..."
+                    gcloud auth configure-docker -q
+
+                    echo "Pushing image to GCR..."
+                    docker push ${gcrTarget}
+                """
+
+                echo "Push Docker Image to GCR Stage - COMPLETE"
             }
-
         } catch (Exception e) {
-            logger.error("EGR0001 - Job Failed - ${e.getMessage()}")
-            throw e
+            echo "[ERROR] Push to GCR failed: ${e.getMessage()}"
+            error("Push to GCR failed.")
         } finally {
             cleanUp()
         }
@@ -65,14 +81,37 @@ def uploadDockerImageToGCR(nexusSource, gcrTarget, gcp_node, googleProjectId) {
 
 
 //===============================================================
-//  Pull Docker Image from GCR
+// Pull Docker Image from GCR
 //===============================================================
 def pullDockerImageFromGCR(gcrImage, gcp_node) {
     node(gcp_node) {
         stage("Docker: Pull Image from GCR") {
-            logger.printBlueMessage("Pulling Image from GCR - START")
-            docker.pullImage(gcrImage)
-            logger.printGreenMessage("Pulling Image from GCR - COMPLETE")
+            try {
+                echo "Pulling Image from GCR - START"
+                sh """
+                    echo "Authenticating with GCR..."
+                    gcloud auth configure-docker -q
+
+                    echo "Pulling image from GCR..."
+                    docker pull ${gcrImage}
+                """
+                echo "Pulling Image from GCR - COMPLETE"
+            } catch (Exception e) {
+                echo "[ERROR] Pull from GCR failed: ${e.getMessage()}"
+                error("Pull from GCR failed.")
+            } finally {
+                cleanUp()
+            }
         }
     }
-    }
+}
+
+
+//===============================================================
+// Clean Up Workspace
+//===============================================================
+def cleanUp() {
+    echo "Cleaning up workspace and Docker cache..."
+    sh "docker system prune -af || true"
+    deleteDir()
+                    }
