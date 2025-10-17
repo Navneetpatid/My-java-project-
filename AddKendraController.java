@@ -64,3 +64,52 @@ private def uploadDockerImageToNexus3() {
 
     logger.printGreenMessage("Publish Image to Nexus 3 Stage - COMPLETE")
               }
+
+//------ Cyberflows Image Scan --------
+private def executeCyberflowsImageScan() {
+    if(cyberFlowsScanEnable) {
+        logger.printBlueMessage("Cyberflows Image Scan Stage - START")
+        stage("Cyberflows: Image Scan") {
+            logger.trace("Cyberflows: Docker Image Scanning Stage Start")
+            Cyberflows cyberflows = new Cyberflows()
+            cyberflows.userAuth()
+            def nexusGroupId = this.groupId.replace('.', '/')
+            cyberflows.createConfiguration(cyberflowsProjectId, artifactId, nexusGroupId, appVersion, dockerNexus3Tag)
+            cyberflows.dockerImageScan()
+            cyberflows.retriveScanReport(cyberflowsProjectId)
+            logger.trace("Cyberflows: Docker Image Scanning Stage End")
+        }
+        logger.printGreenMessage("Cyberflows Image Scan Stage - COMPLETE")
+    }
+}
+
+
+//------ Docker: Publish Image to GCR --------
+private def uploadDockerImageToGCR() {
+    node(gcp_node) {
+        try {
+            gcloud = new GCloud()
+
+            stage("Docker: Publish Image to GCR") {
+                logger.printBlueMessage("Push Docker Image to GCR Stage - START")
+
+                logger.info("Docker Image to GCR Stage Start")
+                if (isUiApp) {
+                    docker.tagGCRImageForUI(googleProjectId, dockerNexus3Tag, artifactId)
+                } else {
+                    docker.tagGCRImage(googleProjectId, dockerNexus3Tag)
+                }
+                logger.trace("Docker: Publish Image to GCR Complete")
+
+                logger.printGreenMessage("Push Docker Image to GCR Stage - COMPLETE")
+            }
+
+        } catch (Exception e) {
+            logger.error("EGR0001 - Job Failed - " + e.getMessage() + ".")
+            isJobFailed = true
+        } finally {
+            deleteDir()
+            cleanUp()
+        }
+    }}
+    }}
