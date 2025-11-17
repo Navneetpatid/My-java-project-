@@ -1,4 +1,4 @@
-pipeline {
+This change is being implemented to enhance and streamline the HAP Deployment Service by removing unnecessary HAP DS validation, standardizing naming through the ITADS rename, improving operational efficiency with UAT ServiceNow integration, strengthening security via the HAP Kong Global Hashivault release, and simplifying observability processes by removing redundant user authorization for OTEL instrumentation during delete actions.pipeline {
     agent any
     stages {
         stage('Call API') {
@@ -25,3 +25,4 @@ pipeline {
         }
     }
 }
+
