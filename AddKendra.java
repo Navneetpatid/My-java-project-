@@ -1,10 +1,10 @@
-CODE RELEASE CHECKLIST (ONE PAGE)
+CODE RELEASE CHECKLIST (UPDATED ONE PAGE)
 
-1. Create CR in Omni
+1. Create CR in Omni / ServiceNow
 
-Login to Omni / ServiceNow
+Login to Omni
 
-Create new CR and select correct Change Type
+Create new CR with correct Change Type
 
 
 2. Fill Header Details
@@ -25,29 +25,29 @@ Assignment Group
 
 Post Deployment Review Group
 
-Assigned To (if needed)
+Assigned To
 
 
 3. CR Summary
 
-Short Description (Example: “Prod || HAP Deployment Service – Global Release 3.2.x update”)
+Short Description (Example: Global Release 3.2.x update)
 
-Description with: Jenkins URLs, GIT branch, Commit ID, Release version, Deployment notes
+Description including: Jenkins URLs, GIT branch, Commit ID, Release version, Deployment notes
 
 
 4. Planning Section
 
-Why is this change being done? (Business reason)
+Reason for Change / Business Justification
 
-Release Page (add release version)
+Release Version details
 
-Implementation Plan (step-by-step, URLs, checkpoints, strategy)
+Implementation Plan (step-by-step)
 
-Customer & Business Impact (No impact / Impact explanation)
+Customer & Business Impact
 
-Technical Impact (No impact / Details + worst case)
+Technical Impact
 
-Backout Plan (Rollback version + steps)
+Backout Plan (rollback steps)
 
 
 5. Change Tasks
@@ -56,64 +56,122 @@ Implementation task
 
 Backout task
 
-Business Review approval task
+Business Review approval
 
-Ind Review approval task
+Ind Review approval
 
-Check all task assignment groups
+Validate task assignment groups
 
 
 6. Schedule
 
-Set Planned Start Date / Time
+Add Start Date / Time
 
-Set Planned End Date / Time
+Add End Date / Time
 
 Validate conflict calendar
 
-Ensure window is correct
+Ensure within change window
 
 
-7. Submit CR (First time to avoid lead time)
+7. Submit CR First Time to Avoid Lead Time
 
-Submit CR once → CR number generated
+Submit CR → number generates
 
-Re-open CR and continue editing
+Re-open and continue editing
 
-Save after every update
+Save after each update
 
 
-8. Final Validation
+8. Requirements & Testing Section (as per ICE page)
 
-All header fields completed
+Requirement links (JIRA story links)
 
-All planning fields filled
+Independent code review link (pull request URL)
 
-All tasks created
+Test evidence link (Confluence or Jenkins)
 
-Schedule correct
+Performance and stress test evidence link
 
-No conflicts
+Reason for not performing performance test (if applicable)
+
+Post Deployment Verification Evidence link
+
+Regression testing type selected (Automated / Manual-Full / Manual-Partial / None)
+
+Regression test evidence link
+
+
+9. JIRA Activities
+
+Create JIRA ticket for this release
+
+Add CR number into JIRA
+
+Add all release activities in JIRA (testing, pipeline update, verification, approvals)
+
+Update JIRA status as per progress
+
+
+10. Confluence Page Creation
+
+Create Confluence page for this CR
+
+Add: Release details, Implementation steps, Evidence links, Test results, Rollback plan
+
+Add page link into CR
+
+
+11. ICE Details
+
+Add ICE section details in CR (Requirement links, Evidence links, Regression info)
+
+Add Artifacts details
+
+Check ICE Score in ICE Pre-Check
+
+Ensure ICE Score meets required threshold
+
+Fix any issues highlighted in ICE checks
+
+
+12. Final Validation
+
+Verify all fields in CR are completed
+
+Check Planning → all sections filled
+
+Check Tasks → correct and assigned
+
+Check Schedule → correct
+
+Check ICE details → correct
+
+Check JIRA & Confluence links added
+
+No conflicts pending
 
 All mandatory fields green
 
 
-9. Final Submission
+13. Final Submission
 
 Submit CR
 
-Request approval from required groups
+Request approvals from required groups
 
-Follow up for pending approvals
+Follow up on approval until CR moves to Scheduled state
 
 
-10. After Approval
+14. After Approval
 
 Execute implementation during window
 
-Complete tasks
+Complete all tasks
 
-Add post-deployment details
+Add post-deployment info & evidence in CR
 
-Move to Review → Close CR
+Update JIRA & Confluence page
+
+Move CR to Review → Close
   
