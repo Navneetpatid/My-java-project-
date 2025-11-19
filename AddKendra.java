@@ -1,61 +1,118 @@
-1) HAP DS rename to ITADS
+CODE RELEASE CHECKLIST (ONE PAGE)
 
-Renamed HAP Deployment Service to ITADS to standardize naming and remove outdated validation references.
-JIRA: https://alm-jira.systems.uk.hsbc/jira/browse/CTOEPEPENG-14999
+1. Create CR in Omni
 
+[ ] Login to Omni / ServiceNow
 
----
-
-2) UAT SNOW Integration
-
-Added improved integration with UAT ServiceNow, enabling smoother workflow automation and better operational efficiency.
+[ ] Create new CR and select correct Change Type
 
 
----
+2. Fill Header Details
 
-3) ITAP Kong Global Release – HashiVault
+[ ] Category
 
-Integrated HashiVault with ITAP Kong Global Release to strengthen security and improve secret management across environments.
+[ ] Service
 
+[ ] Service Offering
 
----
+[ ] Configuration Item (CI)
 
-4) HAP Kong Fixes due to deck version
+[ ] Risk level
 
-Applied required fixes in the Kong gateway to align with the updated deck version, ensuring compatibility and stable deployments.
+[ ] Impact level
 
+[ ] Assignment Group
 
----
+[ ] Post Deployment Review Group
 
-5) Removal of User Authorization for OTEL delete action
-
-Removed unnecessary user authorization checks during OTEL instrumentation delete operations, streamlining cleanups and reducing manual steps.
-ARP Job Link: https://alm-jenkins207.hc.cloud.uk.hsbc:8706/job/HAP_Service_Hosting/job/TestinePipeline/This change is being implemented to enhance and streamline the HAP Deployment Service by removing unnecessary HAP DS validation, standardizing naming through the ITADS rename, improving operational efficiency with UAT ServiceNow integration, strengthening security via the HAP Kong Global Hashivault release, and simplifying observability processes by removing redundant user authorization for OTEL instrumentation during delete actions.pipeline {
-    agent any
-    stages {
-        stage('Call API') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'SNOW_CREDENTIAL_UAT', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh '''
-                        curl -v -k --request POST \
-                          "https://cmb-ib2b-dsp.pprod-eu.systems.uk.hsbc.com:8443/dsp/rest-stss/DSP-1B2B/tokenTranslator?action=translate" \
-                          --header "Content-Type: application/json" \
-                          --cookie "AMToken=AAJTSQACMDA..." \
-                          --data "{
-                            \\"input_token_state\\": {
-                              \\"token_type\\": \\"CREDENTIAL\\",
-                              \\"username\\": \\"$USER\\",
-                              \\"password\\": \\"$PASS\\"
-                            },
-                            \\"output_token_state\\": {
-                              \\"token_type\\": \\"JWT\\"
-                            }
-                          }"
-                    '''
-                }
-            }
-        }
-    }
-}
+[ ] Assigned To (if needed)
 
 
+3. CR Summary
+
+[ ] Short Description (Example: “Prod || HAP Deployment Service – Global Release 3.2.x update”)
+
+[ ] Description with: Jenkins URLs, GIT branch, Commit ID, Release version, Deployment notes
+
+
+4. Planning Section
+
+[ ] Why is this change being done? (Business reason)
+
+[ ] Release Page (add release version)
+
+[ ] Implementation Plan (step-by-step, URLs, checkpoints, strategy)
+
+[ ] Customer & Business Impact (No impact / Impact explanation)
+
+[ ] Technical Impact (No impact / Details + worst case)
+
+[ ] Backout Plan (Rollback version + steps)
+
+
+5. Change Tasks
+
+[ ] Implementation task
+
+[ ] Backout task
+
+[ ] Business Review approval task
+
+[ ] Ind Review approval task
+
+[ ] Check all task assignment groups
+
+
+6. Schedule
+
+[ ] Set Planned Start Date / Time
+
+[ ] Set Planned End Date / Time
+
+[ ] Validate conflict calendar
+
+[ ] Ensure window is correct
+
+
+7. Submit CR (First time to avoid lead time)
+
+[ ] Submit CR once → CR number generated
+
+[ ] Re-open CR and continue editing
+
+[ ] Save after every update
+
+
+8. Final Validation
+
+[ ] All header fields completed
+
+[ ] All planning fields filled
+
+[ ] All tasks created
+
+[ ] Schedule correct
+
+[ ] No conflicts
+
+[ ] All mandatory fields green ✔️
+
+
+9. Final Submission
+
+[ ] Submit CR
+
+[ ] Request approval from required groups
+
+[ ] Follow up for pending approvals
+
+
+10. After Approval
+
+[ ] Execute implementation during window
+
+[ ] Complete tasks
+
+[ ] Add post-deployment details
+
+[ ] Move to Review → Close CR
