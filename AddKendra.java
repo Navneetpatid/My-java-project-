@@ -38,3 +38,12 @@ Solution: Complete all tasks early and take approval at least one day before the
 6) Mistake: CR is not closed on time after completion, creating unnecessary risk or leaving tasks pending in the system.
 
 Solution: Once all stages, validations, and tests are completed, close the CR immediately. Timely closure prevents risk escalation and keeps the release queue clean.
+7) Release Approval Email Not Sent Before/After Release (NEW)
+
+Mistake: Approval email for the release is not sent before starting the release, and completion email is also missed.
+Solution:
+
+Before release: Send the approval email for the current release and take approval from the appropriate approver/person.
+
+After release: Send a “Release Success” email with completed tasks, test results, and all supporting documents attached.
+  
