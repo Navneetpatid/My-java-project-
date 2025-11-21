@@ -46,4 +46,11 @@ Solution:
 Before release: Send the approval email for the current release and take approval from the appropriate approver/person.
 
 After release: Send a “Release Success” email with completed tasks, test results, and all supporting documents attached.
-  
+  8) ICE & CR Confluence Page Not Completed Properly (NEW)
+
+Mistake:
+ICE (Implementation Complexity Evaluation) and CR Confluence documentation is not completed, or the ICE score is below the expected threshold.
+
+Solution:
+Make sure the ICE and CR Confluence page is fully completed with all required details, and ensure the ICE score is above 90 before proceeding with the release.
+
