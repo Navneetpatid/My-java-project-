@@ -1,177 +1,40 @@
-CODE RELEASE CHECKLIST (UPDATED ONE PAGE)
+Mistake & Solution Points (Final CR Release Guideline Format)
 
-1. Create CR in Omni / ServiceNow
+1) Mistake: CR is not created in advance, or CR is reverted frequently for feature usage — causing emergency delays and lead-time issues.
 
-Login to Omni
+Solution: Always create and submit the CR early (in advance) with proper planning. Keep CR stable by reserving features in advance so no last-minute emergency CR is needed. This avoids delays and gives enough time for review.
 
-Create new CR with correct Change Type
 
+---
 
-2. Fill Header Details
+2) Mistake: Important CR checklist points are not reviewed or rechecked — leading to missed parameters, wrong values, or configuration mistakes.
 
-Category
+Solution: Recheck the full CR checklist before submission. Verify all parameters, values, approvals, attachments, and test evidence. A final self-review avoids common mistakes and ensures CR accuracy.
 
-Service
 
-Service Offering
+---
 
-Configuration Item (CI)
+3) Mistake: Pipelines mentioned in the CR description are wrong or pointing to the incorrect environment (pre-prod pipeline added for prod CR or vice-versa).
 
-Risk level
+Solution: Confirm that every pipeline linked in the CR matches the correct environment. Example: Pre-prod CR → pre-prod pipeline, Prod CR → prod pipeline. Cross-check pipeline names and URLs before submitting.
 
-Impact level
 
-Assignment Group
+---
 
-Post Deployment Review Group
+4) Mistake: Dry-run of pipelines is not performed, so package validation fails during the real release task.
 
-Assigned To
+Solution: Always run a full dry-run of each pipeline before adding it to the CR. Ensure the package builds successfully in the dry-run. This confirms that the release package is correct and ready.
 
 
-3. CR Summary
+---
 
-Short Description (Example: Global Release 3.2.x update)
+5) Mistake: CR approval is requested late (same day or last minute), causing delays and difficulty reverting if issues appear.
 
-Description including: Jenkins URLs, GIT branch, Commit ID, Release version, Deployment notes
+Solution: Complete all tasks early and take approval at least one day before the release. Early approval provides buffer time to fix or revert issues without impact.
 
 
-4. Planning Section
+---
 
-Reason for Change / Business Justification
+6) Mistake: CR is not closed on time after completion, creating unnecessary risk or leaving tasks pending in the system.
 
-Release Version details
-
-Implementation Plan (step-by-step)
-
-Customer & Business Impact
-
-Technical Impact
-
-Backout Plan (rollback steps)
-
-
-5. Change Tasks
-
-Implementation task
-
-Backout task
-
-Business Review approval
-
-Ind Review approval
-
-Validate task assignment groups
-
-
-6. Schedule
-
-Add Start Date / Time
-
-Add End Date / Time
-
-Validate conflict calendar
-
-Ensure within change window
-
-
-7. Submit CR First Time to Avoid Lead Time
-
-Submit CR → number generates
-
-Re-open and continue editing
-
-Save after each update
-
-
-8. Requirements & Testing Section (as per ICE page)
-
-Requirement links (JIRA story links)
-
-Independent code review link (pull request URL)
-
-Test evidence link (Confluence or Jenkins)
-
-Performance and stress test evidence link
-
-Reason for not performing performance test (if applicable)
-
-Post Deployment Verification Evidence link
-
-Regression testing type selected (Automated / Manual-Full / Manual-Partial / None)
-
-Regression test evidence link
-
-
-9. JIRA Activities
-
-Create JIRA ticket for this release
-
-Add CR number into JIRA
-
-Add all release activities in JIRA (testing, pipeline update, verification, approvals)
-
-Update JIRA status as per progress
-
-
-10. Confluence Page Creation
-
-Create Confluence page for this CR
-
-Add: Release details, Implementation steps, Evidence links, Test results, Rollback plan
-
-Add page link into CR
-
-
-11. ICE Details
-
-Add ICE section details in CR (Requirement links, Evidence links, Regression info)
-
-Add Artifacts details
-
-Check ICE Score in ICE Pre-Check
-
-Ensure ICE Score meets required threshold
-
-Fix any issues highlighted in ICE checks
-
-
-12. Final Validation
-
-Verify all fields in CR are completed
-
-Check Planning → all sections filled
-
-Check Tasks → correct and assigned
-
-Check Schedule → correct
-
-Check ICE details → correct
-
-Check JIRA & Confluence links added
-
-No conflicts pending
-
-All mandatory fields green
-
-
-13. Final Submission
-
-Submit CR
-
-Request approvals from required groups
-
-Follow up on approval until CR moves to Scheduled state
-
-
-14. After Approval
-
-Execute implementation during window
-
-Complete all tasks
-
-Add post-deployment info & evidence in CR
-
-Update JIRA & Confluence page
-
-Move CR to Review → Close
-  
+Solution: Once all stages, validations, and tests are completed, close the CR immediately. Timely closure prevents risk escalation and keeps the release queue clean.
