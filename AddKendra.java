@@ -54,3 +54,248 @@ ICE (Implementation Complexity Evaluation) and CR Confluence documentation is no
 Solution:
 Make sure the ICE and CR Confluence page is fully completed with all required details, and ensure the ICE score is above 90 before proceeding with the release.
 
+1. Create CR in Omni
+
+Open Omni CMD and use the correct command to create a new CR.
+
+Create the CR with the correct Change Type.
+
+Send an approval email before starting the release.
+
+
+
+---
+
+2. Fill Header Details
+
+Category
+
+Service
+
+Service Offering
+
+Configuration Item (CI)
+
+Risk Level
+
+Impact Level
+
+Assignment Group
+
+Post Deployment Review Group
+
+Assigned To
+
+
+
+---
+
+3. CR Summary
+
+Provide a short description (Example: “Global Release 3.2.x update”).
+
+Add a detailed description including:
+
+Jenkins URLs
+
+Pipeline URLs
+
+GIT branch
+
+Commit ID
+
+Release Version
+
+Release Notes
+
+Jira Link
+
+
+
+
+---
+
+4. Planning Section
+
+Reason for Change / Business Justification
+
+Release Version Details
+
+Implementation Plan (Step-by-step)
+
+Customer & Business Impact
+
+Technical Impact
+
+Backout Plan (Rollback Steps)
+
+
+
+---
+
+5. Change Tasks
+
+Create Implementation Task
+
+Create Backout Task
+
+Add Business Review Approval
+
+Add End Review Approval
+
+Validate all Task Assignment Groups
+
+
+
+---
+
+6. Schedule
+
+Add Start Date / Time
+
+Add End Date / Time
+
+Validate Conflict Calendar
+
+Ensure release is within Change Window
+
+
+
+---
+
+7. Submit CR First Time (Lead Time Requirement)
+
+Submit CR → System generates CR Number
+
+Re-open CR and continue adding updates
+
+Save after every update
+
+
+
+---
+
+8. Requirements & Testing Section (ICE Page)
+
+Requirement Links (Jira Story Links)
+
+Independent Code Review Link (Pull Request URL)
+
+Test Evidence Links (Confluence/Jenkins)
+
+Performance & Stress Test Evidence (If applicable)
+
+Reason for not performing performance test (if required)
+
+Post Deployment Verification Evidence
+
+Select Regression Testing Type
+
+Automated / Manual-Full / Manual-Partial / None
+
+
+Regression Test Evidence Link
+
+
+
+---
+
+9. Jira Activities
+
+Create Jira Ticket for this Release
+
+Add CR Number into Jira
+
+Add all Release Activities in Jira
+
+Update Jira Status as progress continues
+
+
+
+---
+
+10. Confluence Page Creation
+
+Create Confluence Page for this CR
+
+Add all prod & non-prod CR release details and links
+
+Add Confluence Page URL into CR
+
+
+
+---
+
+11. ICE Details
+
+Add ICE Section Details in CR:
+
+Requirement Links
+
+Evidence Links
+
+Regression Info
+
+
+Add All Artifact Details
+
+Check ICE Score in Pre-check
+
+Ensure score meets required threshold
+
+Fix all issues highlighted in ICE
+
+
+
+---
+
+12. Final Validation
+
+Verify all fields in CR are correct & completed
+
+Check Planning Section – all fields filled
+
+Check Change Tasks – correct & assigned
+
+Check Schedule – correct
+
+Check ICE details – correct
+
+Check Jira & Confluence links added
+
+Ensure no conflicts
+
+All mandatory fields should be green
+
+
+
+---
+
+13. Final Submission
+
+Submit CR for final approval
+
+Request approval from required groups
+
+Follow up until CR moves to Scheduled state
+
+
+
+---
+
+14. After Approval
+
+Execute Implementation during the release window
+
+Complete all tasks
+
+Add Post-Deployment Info & Evidence
+
+Update Jira & Confluence Page
+
+Move CR to Review → Closed
+
+
+
+---
+  
