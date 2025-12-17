@@ -1,33 +1,40 @@
-EGR0662
+EGR1006
 
-Cause: Service call to Anypoint Platform API failed due to connectivity, authentication, or service availability issues.
-
-Resolution: Verify Anypoint Platform availability, API endpoint, credentials, and network connectivity, then retry.
-
+Cause: SAST scan failed because configurationID is not defined in the pipeline configuration.
+Resolution: Add a valid configurationID in the SAST scan configuration and rerun the pipeline.
 
 
 ---
 
-EGR0663
+EGR1007
 
-Cause: Anypoint Platform API returned an unexpected or malformed response.
-
-Resolution: Check API response details in logs and retry after confirming platform stability.
-
+Cause: SAST scan failed because projectID is missing or not mapped to the repository.
+Resolution: Configure the correct projectID in the SAST tool and update the pipeline.
 
 
 ---
 
-EGR0664
+EGR1008
 
-Cause: Anypoint Platform API call failed with an error response from the platform.
-
-Resolution: Review the response error details, validate request parameters and credentials, and rerun the pipeline.
-
+Cause: SAST scan failed due to missing CyberFlow credentials in the CI/CD environment.
+Resolution: Configure valid CyberFlow credentials in the pipeline and re-execute the scan.
 
 
 ---
-Cause: Change Request (CR) details are missing, invalid, or not in an approved state during pipeline validation.
 
-Resolution: Verify the CR number, approval status, and required fields in the change management system, then rerun the pipeline.
+EGR1009
+
+Cause: AutoICE update failed because customer approval parameter is missing or invalid.
+Resolution: Provide a valid autoICEObjCustomerApproval value before triggering AutoICE.
+
+
+---
+
+EGR1010
+
+Cause: ICE processing failed due to missing mandatory configuration or inputs.
+Resolution: Validate all required ICE parameters and artifacts, then rerun the pipeline.
+
+
+---
   
