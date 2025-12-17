@@ -1,38 +1,29 @@
-EGR0206
+EGR0662
 
-Cause: Mule HAP template build failed due to compilation errors or missing dependencies in the template.
+Cause: Service call to Anypoint Platform API failed due to connectivity, authentication, or service availability issues.
 
-Resolution: Review the build error logs, fix dependency or configuration issues in the HAP template, and rerun the pipeline.
-
-
-
----
-
-EGR0207
-
-Cause: Pipeline failed to update the XML file due to invalid XML content or insufficient permissions in the HAP template.
-
-Resolution: Validate the XML syntax and file path, ensure write access in the HAP template, and retry the pipeline.
-    
-
-EGR0322
-
-Cause: apiPlatformGW definition in CloudHub is missing mandatory attributes for the Mule application.
-
-Resolution: Update the apiPlatformGW configuration with all required attributes and retry the deployment.
-
-EGR0605
-
-Cause: Pipeline failed to store the Deploy Control Object due to an internal error or connectivity issue with DEPLOY CONTROL service.
-
-Resolution: Verify DEPLOY CONTROL service availability and credentials, then rerun the pipeline.
+Resolution: Verify Anypoint Platform availability, API endpoint, credentials, and network connectivity, then retry.
 
 
 
 ---
 
-EGR0604
+EGR0663
 
-Cause: Application failed to store the Deploy Control Object in the central deployment register due to validation or service error.
+Cause: Anypoint Platform API returned an unexpected or malformed response.
 
-Resolution: Check the central deployment register service status and error details, then retry the deployment.
+Resolution: Check API response details in logs and retry after confirming platform stability.
+
+
+
+---
+
+EGR0664
+
+Cause: Anypoint Platform API call failed with an error response from the platform.
+
+Resolution: Review the response error details, validate request parameters and credentials, and rerun the pipeline.
+
+
+
+---
