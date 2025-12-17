@@ -1,40 +1,22 @@
-EGR1010
+EGR1015
 
-Cause: AutoICE update failed because Test Evidence parameter is missing or invalid.
-Resolution: Provide a valid autoICEObjTestEvidence value and rerun AutoICE update.
-
-
----
-
-EGR1011
-
-Cause: AutoICE update failed because Post Deployment Verification details are missing or invalid.
-Resolution: Add valid autoICEObjPostDeploymentVerification data before triggering AutoICE.
+Cause: AutoICE update failed because the configured SAST URL is invalid or malformed.
+Resolution: Update the SAST URL with a valid and reachable endpoint, then rerun AutoICE.
 
 
 ---
 
-EGR1012
+EGR1016
 
-Cause: AutoICE update failed because Requirements parameter is missing or incorrect.
-Resolution: Populate valid autoICEObjRequirements information and retry the update.
-
-
----
-
-EGR1013
-
-Cause: AutoICE update failed due to missing Component Name parameter.
-Resolution: Set a valid autoICEObjComponentName in the AutoICE request.
+Cause: AutoICE update failed because the configured DAST URL is invalid or malformed.
+Resolution: Correct the DAST URL format and ensure it is accessible before retrying.
 
 
 ---
 
-EGR1014
+EGR1017
 
-Cause: AutoICE update failed because credsObjID is not configured or passed.
-Resolution: Configure and pass a valid credsObjID credential reference, then rerun.
+Cause: AutoICE update failed because the configured MAST URL is invalid or malformed.
+Resolution: Provide a valid MAST URL in the configuration and re-execute AutoICE update.
 
-
----
   
