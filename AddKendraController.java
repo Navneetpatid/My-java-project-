@@ -27,3 +27,7 @@ Resolution: Review the response error details, validate request parameters and c
 
 
 ---
+Cause: Change Request (CR) details are missing, invalid, or not in an approved state during pipeline validation.
+
+Resolution: Verify the CR number, approval status, and required fields in the change management system, then rerun the pipeline.
+  
