@@ -1,36 +1,16 @@
-EGR0202
+EGR0206
 
-Cause: Approved deployed version validation failed due to missing or inconsistent deployment metadata.
+Cause: Mule HAP template build failed due to compilation errors or missing dependencies in the template.
 
-Resolution: Verify the deployed version details and contact HAP support if the issue persists.
-
-
-
----
-
-EGR0203
-
-Cause: Pipeline failed to update the properties file due to incorrect file path or insufficient write permissions in HAP template.
-
-Resolution: Ensure the properties file exists in the HAP template and the pipeline has write access, then retry.
+Resolution: Review the build error logs, fix dependency or configuration issues in the HAP template, and rerun the pipeline.
 
 
 
 ---
 
-EGR0204
+EGR0207
 
-Cause: YAML configuration file update failed due to invalid YAML content or incorrect file location in HAP template.
+Cause: Pipeline failed to update the XML file due to invalid XML content or insufficient permissions in the HAP template.
 
-Resolution: Validate the YAML syntax and file path in the HAP template and rerun the pipeline.
-
-
-
----
-
-EGR0205
-
-Cause: Required pom.xml file is missing in the HAP template for build or deploy action.
-
-Resolution: Add the correct pom.xml to the HAP template or provide Nexus GAV details in the pipeline input.
+Resolution: Validate the XML syntax and file path, ensure write access in the HAP template, and retry the pipeline.
     
