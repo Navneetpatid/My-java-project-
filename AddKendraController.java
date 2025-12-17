@@ -1,48 +1,28 @@
-EGR0202
+EGR0100
 
-Cause: Deployed version does not match the approved version in HAP.
+Cause: HAP Engagement ID was not passed as an input parameter.
 
-Resolution: Verify the approved version in HAP and redeploy the correct build.
-
-
-
----
-
-EGR0204
-
-Cause: Nexus repository is unreachable or artifact URL/credentials are invalid.
-
-Resolution: Check Nexus URL, credentials, network connectivity, and artifact availability.
+Resolution: Provide a valid HAP Engagement ID (folder name) and rerun the pipeline.
 
 
 
 ---
 
-EGR0205
+EGR0099
 
-Cause: Downloaded ZIP file is corrupted or incomplete.
+Cause: deployUtility is not configured or unsupported (neither helm nor kubectl).
 
-Resolution: Re-download the artifact from Nexus and ensure ZIP integrity.
-
-
-
----
-
-EGR0206
-
-Cause: Checksum file is missing or Nexus access failed.
-
-Resolution: Ensure checksum exists in Nexus and verify repository access permissions.
+Resolution: Verify onboarding details and configure a supported deploy utility.
 
 
 
 ---
 
-EGR0203
+EGR0100 (Configuration YAML)
 
-Cause: Provided hapEngagementID does not exist or is incorrect.
+Cause: Configuration YAML is not available in Nexus prod group or path is incorrect.
 
-Resolution: Pass a valid HAP Engagement ID in the job parameters.
+Resolution: Upload the YAML to Nexus prod group and pass the correct configurationYamlPath.
 
 
 
@@ -50,7 +30,20 @@ Resolution: Pass a valid HAP Engagement ID in the job parameters.
 
 EGR0101
 
-Cause: Required job parameter CONSUMER_TYPE is not provided.
+Cause: DEPLOYMENT_IMAGE (artifactId:versionTag) is missing for a governed environment.
 
-Resolution: Pass CONSUMER_TYPE in the job parameter before execution.
-  
+Resolution: Provide the DEPLOYMENT_IMAGE parameter in the job configuration.
+
+
+
+---
+
+EGR0102
+
+Cause: Source code GIT branch parameter is not provided.
+
+Resolution: Specify a valid GIT branch name before triggering the pipeline.
+
+
+
+---
