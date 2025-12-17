@@ -14,3 +14,9 @@ Cause: Pipeline failed to update the XML file due to invalid XML content or insu
 
 Resolution: Validate the XML syntax and file path, ensure write access in the HAP template, and retry the pipeline.
     
+
+EGR0322
+
+Cause: apiPlatformGW definition in CloudHub is missing mandatory attributes for the Mule application.
+
+Resolution: Update the apiPlatformGW configuration with all required attributes and retry the deployment.
