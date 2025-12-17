@@ -1,115 +1,36 @@
-//----------- Create Docker Image -----------
-private def createDockerImage() {
-    logger.printBlueMessage("Docker Image Build Stage - START")
+EGR0202
 
-    def dockerFilePath = (this.config.dockerFilePath) ? this.config.dockerFilePath : ''
-    workspaceDir = '.'
-    String mvnTargetDir = "target"
+Cause: Approved deployed version validation failed due to missing or inconsistent deployment metadata.
 
-    if (!".".equals(dockerFilePath.trim())) {
-        int lastIndex = dockerFilePath.lastIndexOf("/")
-        mvnTargetDir = dockerFilePath.substring(0, lastIndex)
-        workspaceDir = sourceCodeDir + "/" + mvnTargetDir
-    }
-
-    // logger.info("inside custom workspace ${workspaceDir}")
-
-    // TODO: This needs refactoring, use pipelineTools.getTool('maven')
-    def mvn_version = "Maven_3_3_3_Linux"
-    def jdk_version = "JDK_1_17_0_2_Linux"
-
-    docker = new Docker()
-
-    logger.info("inside custom workspace ${workspaceDir}")
-
-    stage('Docker: Build Image') {
-        logger.trace("Docker Image Build Stage Start")
-        logger.info("initial dockerFilePath: ${dockerFilePath}")
-        if (isUiApp) {
-            docker.initNode()
-            this.artifactId = this.appName
-            uiDockerTag = docker.buildImageUI(this.appName, this.appVersion)
-        } else {
-            docker.init(mvn_version, jdk_version, workspaceDir)
-            this.appVersion = docker.getVersion()
-            this.artifactId = docker.getArtifactId()
-            this.groupId = docker.getGroupId()
-            docker.buildImage(dockerFilePath)
-        }
-        logger.trace("Docker Image Build Stage Complete")
-        logger.printGreenMessage("Docker Image Build Stage - COMPLETE")
-    }
-}
-
-//----------- Upload Docker Image To Nexus3 -----------
-private def uploadDockerImageToNexus3() {
-    logger.printBlueMessage("Publish Image to Nexus 3 Stage - START")
-
-    stage("Docker: Publish Image to Nexus 3 Repository") {
-        logger.info("Docker Image Nexus Stage Start")
-        dockerNexus3Tag = utils().createNexus3TagForAH("docker", this.appVersion)
-        logger.info("dockerNexus3Tag: " + dockerNexus3Tag)
-        logger.info("dockerNexus3CompleteTag: " + uiDockerTag)
-
-        if (isUiApp) {
-            // this.artifactId = uiDockerTag
-            // this.groupId = uiNexusPath // take this as user parameter
-            docker.publishDockerImageToNexus3DevStagingForUI(uiDockerTag)
-        } else {
-            docker.publishDockerImageToNexus3DevStaging(dockerNexus3Tag)
-        }
-
-        logger.trace("Docker: Publish Image to Nexus 3 Repository Complete")
-    }
-
-    logger.printGreenMessage("Publish Image to Nexus 3 Stage - COMPLETE")
-              }
-
-//------ Cyberflows Image Scan --------
-private def executeCyberflowsImageScan() {
-    if(cyberFlowsScanEnable) {
-        logger.printBlueMessage("Cyberflows Image Scan Stage - START")
-        stage("Cyberflows: Image Scan") {
-            logger.trace("Cyberflows: Docker Image Scanning Stage Start")
-            Cyberflows cyberflows = new Cyberflows()
-            cyberflows.userAuth()
-            def nexusGroupId = this.groupId.replace('.', '/')
-            cyberflows.createConfiguration(cyberflowsProjectId, artifactId, nexusGroupId, appVersion, dockerNexus3Tag)
-            cyberflows.dockerImageScan()
-            cyberflows.retriveScanReport(cyberflowsProjectId)
-            logger.trace("Cyberflows: Docker Image Scanning Stage End")
-        }
-        logger.printGreenMessage("Cyberflows Image Scan Stage - COMPLETE")
-    }
-}
+Resolution: Verify the deployed version details and contact HAP support if the issue persists.
 
 
-//------ Docker: Publish Image to GCR --------
-private def uploadDockerImageToGCR() {
-    node(gcp_node) {
-        try {
-            gcloud = new GCloud()
 
-            stage("Docker: Publish Image to GCR") {
-                logger.printBlueMessage("Push Docker Image to GCR Stage - START")
+---
 
-                logger.info("Docker Image to GCR Stage Start")
-                if (isUiApp) {
-                    docker.tagGCRImageForUI(googleProjectId, dockerNexus3Tag, artifactId)
-                } else {
-                    docker.tagGCRImage(googleProjectId, dockerNexus3Tag)
-                }
-                logger.trace("Docker: Publish Image to GCR Complete")
+EGR0203
 
-                logger.printGreenMessage("Push Docker Image to GCR Stage - COMPLETE")
-            }
+Cause: Pipeline failed to update the properties file due to incorrect file path or insufficient write permissions in HAP template.
 
-        } catch (Exception e) {
-            logger.error("EGR0001 - Job Failed - " + e.getMessage() + ".")
-            isJobFailed = true
-        } finally {
-            deleteDir()
-            cleanUp()
-        }
-    }}
-    }}
+Resolution: Ensure the properties file exists in the HAP template and the pipeline has write access, then retry.
+
+
+
+---
+
+EGR0204
+
+Cause: YAML configuration file update failed due to invalid YAML content or incorrect file location in HAP template.
+
+Resolution: Validate the YAML syntax and file path in the HAP template and rerun the pipeline.
+
+
+
+---
+
+EGR0205
+
+Cause: Required pom.xml file is missing in the HAP template for build or deploy action.
+
+Resolution: Add the correct pom.xml to the HAP template or provide Nexus GAV details in the pipeline input.
+    
