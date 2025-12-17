@@ -20,3 +20,6 @@ Cause: AutoICE update failed because the configured MAST URL is invalid or malfo
 Resolution: Provide a valid MAST URL in the configuration and re-execute AutoICE update.
 
   
+
+Cause: Required XML configuration file is missing, not generated, or not included in the pipeline execution.
+Resolution: Generate and add the required XML file to the correct path and ensure it is referenced in the pipeline configuration.
