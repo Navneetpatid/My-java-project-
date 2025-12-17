@@ -1,25 +1,56 @@
-EGR1015
+EGR0202
 
-Cause: AutoICE update failed because the configured SAST URL is invalid or malformed.
-Resolution: Update the SAST URL with a valid and reachable endpoint, then rerun AutoICE.
+Cause: Deployed version does not match the approved version in HAP.
 
+Resolution: Verify the approved version in HAP and redeploy the correct build.
 
----
-
-EGR1016
-
-Cause: AutoICE update failed because the configured DAST URL is invalid or malformed.
-Resolution: Correct the DAST URL format and ensure it is accessible before retrying.
 
 
 ---
 
-EGR1017
+EGR0204
 
-Cause: AutoICE update failed because the configured MAST URL is invalid or malformed.
-Resolution: Provide a valid MAST URL in the configuration and re-execute AutoICE update.
+Cause: Nexus repository is unreachable or artifact URL/credentials are invalid.
 
+Resolution: Check Nexus URL, credentials, network connectivity, and artifact availability.
+
+
+
+---
+
+EGR0205
+
+Cause: Downloaded ZIP file is corrupted or incomplete.
+
+Resolution: Re-download the artifact from Nexus and ensure ZIP integrity.
+
+
+
+---
+
+EGR0206
+
+Cause: Checksum file is missing or Nexus access failed.
+
+Resolution: Ensure checksum exists in Nexus and verify repository access permissions.
+
+
+
+---
+
+EGR0203
+
+Cause: Provided hapEngagementID does not exist or is incorrect.
+
+Resolution: Pass a valid HAP Engagement ID in the job parameters.
+
+
+
+---
+
+EGR0101
+
+Cause: Required job parameter CONSUMER_TYPE is not provided.
+
+Resolution: Pass CONSUMER_TYPE in the job parameter before execution.
   
-
-Cause: Required XML configuration file is missing, not generated, or not included in the pipeline execution.
-Resolution: Generate and add the required XML file to the correct path and ensure it is referenced in the pipeline configuration.
