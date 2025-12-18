@@ -1,49 +1,51 @@
-EGR0100
+Subject: Work Summary – Last Three Working Days (Mon–Wed)
 
-Cause: HAP Engagement ID was not passed as an input parameter.
+Hi Team,
 
-Resolution: Provide a valid HAP Engagement ID (folder name) and rerun the pipeline.
+Please find below a brief summary of my work activities for the last three working days:
 
+Monday:
 
+Attended Scrum call.
 
----
+Participated in IAGP KT session.
 
-EGR0099
+Worked on 2 customer issues.
 
-Cause: deployUtility is not configured or unsupported (neither helm nor kubectl).
+Had multiple calls (3–5) with the Manual Deployment team.
 
-Resolution: Verify onboarding details and configure a supported deploy utility.
-
-
-
----
-
-EGR0100 (Configuration YAML)
-
-Cause: Configuration YAML is not available in Nexus prod group or path is incorrect.
-
-Resolution: Upload the YAML to Nexus prod group and pass the correct configurationYamlPath.
+Joined a customer call regarding deployment control failure and coordinated with the deployment team for analysis.
 
 
+Tuesday:
 
----
+Attended Scrum call.
 
-EGR0101
+Had a discussion with Prajwal regarding a customer issue in UAT and coordination with the Manual Deployment team.
 
-Cause: DEPLOYMENT_IMAGE (artifactId:versionTag) is missing for a governed environment.
+Joined a call with Hariprasad to discuss the Shrinivas pipeline issue.
 
-Resolution: Provide the DEPLOYMENT_IMAGE parameter in the job configuration.
+Reviewed and checked code during the call and worked on error handling.
 
-
-
----
-
-EGR0102
-
-Cause: Source code GIT branch parameter is not provided.
-
-Resolution: Specify a valid GIT branch name before triggering the pipeline.
+Updated Confluence documentation related to error handling.
 
 
+Wednesday:
 
----
+Investigated one pipeline failure issue as per Sravan Kumar’s request.
+
+Attended Scrum call.
+
+Joined ARP call in between other tasks.
+
+Completed error handling-related Confluence documentation.
+
+Checked IAGP pipeline status.
+
+Reviewed Confluence pages to understand the overall flow and dependencies.
+
+
+Please let me know if any additional details are required.
+
+Thanks & Regards,
+Navneet Patidar
