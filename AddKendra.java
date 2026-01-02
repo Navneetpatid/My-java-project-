@@ -1,11 +1,11 @@
 
-Cause: Delete/Uninstall action is restricted for users in governed environments (PPD/PRD).
-Resolution: Raise a request or contact the admin/authorized team to perform the delete or uninstall action.
+Cause: Configuration YAML file is missing, unreadable, or contains invalid syntax.
+Resolution: Verify the configuration YAML file exists, is valid, and accessible, then re-run the pipeline.
 
 
 ---
 
-EGR0106
+EGR0301
 
-Cause: Pipeline action is set to BUILD or BUILDDEPLOY, which is not allowed for governed environments.
-Resolution: Update the pipeline action to the approved action (e.g., DEPLOY) and re-run the pipeline.
+Cause: Required Helm Chart.yaml file is missing or the file name/path is incorrect.
+Resolution: Ensure Chart.yaml exists at the correct path with the correct name and retry the pipeline.
