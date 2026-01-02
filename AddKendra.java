@@ -1,4 +1,6 @@
-
+EGR0401
+Cause: Region value is missing or not returned from the database.
+Resolution: Configure and validate the Region value in the database before execution.
 EGR0397
 Cause: helm_chart_nexus_url value is missing or not returned from the database.
 Resolution: Add or correct the helm_chart_nexus_url entry in the database/config source.
@@ -11,3 +13,4 @@ Resolution: Define and validate the Namespace value in the database before deplo
 EGR0400
 Cause: Cluster value is not present or not returned from the database.
 Resolution: Update the database with a valid Cluster value and retry the process
+
