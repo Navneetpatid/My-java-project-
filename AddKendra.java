@@ -1,4 +1,6 @@
-EGR0401
+EGR0406
+Cause: DMZ Load Balancer host is not mapped to the workspace in the pipeline database.
+Resolution: Update the pipeline database to map the correct DMZ LB host to the workspace or contact the HAP/Kong Pipeline team.EGR0401
 Cause: Region value is missing or not returned from the database.
 Resolution: Configure and validate the Region value in the database before execution.
 EGR0397
@@ -13,4 +15,5 @@ Resolution: Define and validate the Namespace value in the database before deplo
 EGR0400
 Cause: Cluster value is not present or not returned from the database.
 Resolution: Update the database with a valid Cluster value and retry the process
+
 
