@@ -1,1 +1,7 @@
-This task covers the Phase 5 implementation for the ITADS Deployment Service as part of Release 3.3.0. The change enables required configuration updates, pipeline enhancements, and deployment readiness to support ITADS consumers. It ensures alignment with the latest release standards, improves deployment stability, and supports controlled rollout through Jenkins and DeployControl. The implementation includes deployment, validation, and post-release verification to ensure smooth and reliable service availability.
+Phase 5 – Acceptance Criteria (Concise)
+All references of HAP DS renamed to ITADS across code and ICE validations.
+Deployment Service validates CRs against SNOW UAT, SNOW PROD, and JonSnow.
+Jenkins pipeline executes successfully after Phase 5 changes.
+ICE pre-check validations pass without errors.
+Confluence artifacts updated for ITADS terminology.
+Post-deployment verification confirms service availability.
