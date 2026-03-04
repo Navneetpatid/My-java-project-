@@ -7,3 +7,10 @@ I will be attaching a Confluence document for your reference. Kindly follow the 
 Please let me know if you need any clarification or support.
 Best regards,
 Navneet
+ALT - GKE table Composite Key Changes
+AAP Changes for Survey and Notification
+Deployment of Stateful set and Cron Job
+Enhancements for control 5.1 to support staff IDs starting with CP (To support INM Users)
+Enhancements to Mule 4 Nexus artefacts download Module
+IKP Platform component deployment Feature to support pilot onboarding
+Enhancements to Kong DMZ Deployments
