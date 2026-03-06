@@ -24,3 +24,9 @@ Pipeline support documentation is created.
 Checklist for pipeline setup and validation is included.
 Common pipeline errors and solutions are documented.
 Documentation is accessible for ITADS onboarding support.
+Support IAGP deployment activities including CR creation and maintaining related documentation in Confluence.
+Acceptance Criteria
+IAGP deployment support is provided.
+Change Request (CR) is created for deployments when required.
+Deployment documentation is updated in Confluence.
+Deployment activities are completed without issues.
