@@ -30,3 +30,11 @@ IAGP deployment support is provided.
 Change Request (CR) is created for deployments when required.
 Deployment documentation is updated in Confluence.
 Deployment activities are completed without issues.
+
+
+  Implement enhancements and improve observability to monitor system performance and support deployment services.
+Acceptance Criteria
+Required enhancements are implemented.
+Observability or monitoring improvements are configured.
+System performance and logs can be monitored properly.
+Changes are documented and validated.
