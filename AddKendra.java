@@ -17,3 +17,10 @@ Enhancements to Kong DMZ Deployments
 
   This change is being implemented to promote ITADS Deployment Service Release 3.3.2 to the Production environment. The release includes platform enhancements, configuration updates, and deployment improvements. All changes have been successfully tested and validated in the UAT environment before the production release.
 
+
+Provide pipeline support documentation including checklist and common errors to help ITADS onboarding and deployment service usage.
+Acceptance Criteria
+Pipeline support documentation is created.
+Checklist for pipeline setup and validation is included.
+Common pipeline errors and solutions are documented.
+Documentation is accessible for ITADS onboarding support.
