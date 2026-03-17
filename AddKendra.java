@@ -1,13 +1,13 @@
 Description
-Perform UAT testing for ITADS before the production release.
-Validate all deployed changes in the UAT environment to ensure functionality works as expected.
-Verify that the application is stable and no critical issues exist before production deployment.
-Document test results and confirm readiness for the production release.
+Provide L1 support for ITADS related services including KONG, Mule, and SHP.
+Monitor system alerts, incidents, and service health.
+Perform initial troubleshooting and log analysis for reported issues.
+Escalate issues to L2/L3 teams when required.
+Ensure smooth operation and quick resolution of support requests.
 Acceptance Criteria
-UAT environment deployment is completed successfully.
-All planned UAT test cases are executed.
-No critical or high-severity defects remain open.
-Application functionality is verified and working as expected in UAT.
-Test results are documented and shared with the team.
-Approval received from stakeholders for production release.
-Production release readiness is confirmed.
+L1 monitoring for KONG, Mule, and SHP services is performed regularly.
+Incidents or alerts are identified and logged in the system.
+Initial troubleshooting and log verification is completed.
+Issues that cannot be resolved at L1 are escalated to L2/L3 teams.
+Support activities and updates are documented in the ticket.
+Service availability and stability are maintained.
