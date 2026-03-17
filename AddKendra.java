@@ -1,13 +1,9 @@
-Description
-Provide L1 support for ITADS related services including KONG, Mule, and SHP.
-Monitor system alerts, incidents, and service health.
-Perform initial troubleshooting and log analysis for reported issues.
-Escalate issues to L2/L3 teams when required.
-Ensure smooth operation and quick resolution of support requests.
+Perform testing for the Jenkins pipeline after migration to GCP for KONG and Mule pipelines using the UAT Change Request (CR). Ensure the pipelines execute successfully in the new environment without impacting existing deployment processes. Validate build, deployment, and integration functionality during the migration testing phase.
 Acceptance Criteria
-L1 monitoring for KONG, Mule, and SHP services is performed regularly.
-Incidents or alerts are identified and logged in the system.
-Initial troubleshooting and log verification is completed.
-Issues that cannot be resolved at L1 are escalated to L2/L3 teams.
-Support activities and updates are documented in the ticket.
-Service availability and stability are maintained.
+Jenkins pipelines for KONG and Mule execute successfully in the GCP environment.
+UAT Change Request (CR) is used to validate the migration testing.
+Build and deployment stages complete without errors.
+Pipeline integration with required services and repositories works correctly.
+Logs and execution results are verified for successful completion.
+No impact observed on existing deployment functionality.
+Testing results are documented and shared with the team.
