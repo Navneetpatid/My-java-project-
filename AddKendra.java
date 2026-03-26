@@ -1,19 +1,23 @@
-Summary of Issue and Resolution
-Issues Identified:
-ENG ID: HAP-CTO-36516
-Jenkins pipeline failed due to shell command error.
-Root cause: Splunk configuration was commented in values file, so deployment could not read required values.
-ENG ID: HAP-CTO-37752
-MI event was not getting pushed to Splunk.
-ENG ID: HAP-CTO-1002
-Required configuration missing in Prod pipeline (clusters and namespace not added).
-KONG DNS was down, causing KONG-related URLs to be inaccessible.
-Resolution / Actions Taken:
-Uncommented and corrected Splunk configuration in values file.
-Verified MI event flow to Splunk after fix.
-Added required clusters (uk-aza-1103, uk-azb-1103) and namespace (eos-hosting-platform-uk) in Prod pipeline as per onboarding.
-Waited for KONG DNS auto-recovery and verified services post restoration.
-Current Status:
-All ENG issues resolved successfully.
-KONG DNS is up and stable.
-Pipeline execution and Splunk integration are working as expected.
+UAT (User Acceptance Testing) for ITADS G3 service change request (CR) to validate enhancements and ensure the deployment service works as expected in the Q1 2026 release. This includes verifying functional behavior, integration points, and overall system stability before production rollout.
+✅ Acceptance Criteria
+Functional Validation
+All CR requirements are implemented and working as expected.
+No deviation from approved business logic.
+UAT Test Case Execution
+All defined UAT test cases are executed.
+Test results are documented with pass/fail status.
+Defect Handling
+All critical and high-priority defects are resolved.
+Medium/low defects are logged and reviewed.
+Integration Validation
+ITADS G3 service works correctly with dependent systems/services.
+No data mismatch or API failures observed.
+Performance Check
+Service response time is within acceptable limits.
+No performance degradation compared to baseline.
+User Sign-off
+Business/user stakeholders validate the changes.
+Formal UAT sign-off is obtained.
+Deployment Readiness
+No blocking issues remain.
+Ready for production deployment.
