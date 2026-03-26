@@ -1,5 +1,6 @@
-ITADS/ITAP onboarding completed with required configurations and access.
-Integration with dependent systems validated successfully.
-No critical or high-priority issues identified.
-Stakeholder confirmation received for successful onboarding
-Provide onboarding support for ITADS/ITAP services, including setup, configuration, and validation of required components to ensure successful integration and readiness for usage. This involves coordinating with relevant teams, verifying access, and ensuring smooth onboarding without impacting existing services.
+Create and manage ITADS production release change requests (CR), including preparing and updating all required documentation and pages (e.g., ICE, Confluence) to ensure smooth and compliant production deployment.
+✅ Acceptance Criteria
+All required CRs for ITADS production release are created and properly configured.
+Related documentation/pages (ICE, Confluence) are created and updated accurately.
+CRs are reviewed and approved as per process without errors.
+No critical issues or missing information before production release.
