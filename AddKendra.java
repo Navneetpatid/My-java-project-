@@ -1,7 +1,8 @@
-Add or update the environment configuration details for CER and CDR systems to ensure accurate documentation and proper deployment support across the environments.
+Perform release and testing activities for the ITADS service to ensure the application is properly deployed and functioning as expected in the target environment. Validate the release through standard testing and confirm system stability after deployment.
 Acceptance Criteria
-Environment details for CER and CDR are reviewed and updated where required.
-All necessary configuration information (URLs, endpoints, environment names, etc.) is correctly documented.
-Updates are validated to ensure the information is accurate and consistent with the current setup.
-Changes are saved in the appropriate system/documentation repository.
-JIRA ticket is updated with confirmation once the environment details are successfully added or updated.
+ITADS application release is successfully deployed to the target environment.
+Deployment is executed through the approved CI/CD pipeline.
+Basic functional and smoke testing is completed after the release.
+No critical errors are found in deployment or application logs.
+Release results and testing outcomes are documented in the JIRA ticket.
+Any identified issues are logged and communicated to the relevant team.
