@@ -1,8 +1,6 @@
-Perform release and testing activities for the ITADS service to ensure the application is properly deployed and functioning as expected in the target environment. Validate the release through standard testing and confirm system stability after deployment.
-Acceptance Criteria
-ITADS application release is successfully deployed to the target environment.
-Deployment is executed through the approved CI/CD pipeline.
-Basic functional and smoke testing is completed after the release.
-No critical errors are found in deployment or application logs.
-Release results and testing outcomes are documented in the JIRA ticket.
-Any identified issues are logged and communicated to the relevant team.
+Define the G3 workflow process for application release management.
+Include steps for creating Package Work Item (PWI).
+Include configuration setup using Release Configuration Work Item (RCWI).
+Define the process for creating Release Work Item (RWI).
+Describe how packages are deployed to the target environments (Dev/UAT/Prod).
+Ensure proper linkage between PWI, RWI, and RCWI in the workflow.
