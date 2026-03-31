@@ -1,9 +1,18 @@
-STEP-4: Rollback to Previous Version (Release-3.3.1)
-In case of deployment failure, rollback will be performed using G3 Deployment Service.
-A 5-minute fix-forward window will be followed; if unresolved or critical, RWI (Automated Deployment) will be triggered. G3 will automatically:
-Fetch packages (PWI)
-Use deployment steps from RCWI
-Deploy to target environments
-Rollback will complete in <5 minutes.
-Post rollback, validation will be done (application access, API/services check, Jenkins status, logs monitoring) to confirm stability.
-Minimal impact expected (brief degradation possible, no data loss). Any outage will be recorded and stakeholders will be informed.
+Verify below pipelines/jobs:
+MULE deployment verification
+KONG deployment verification
+SHP IKP KUBECTL deployment verification
+SHP GKE HELM deployment verification
+SHP IKP HELM deployment verification
+Validation Steps:
+Application accessibility and UI validation
+API/service response verification
+Jenkins job status check (all jobs successful)
+Log monitoring for errors/exceptions
+End-to-end functionality validation
+Responsibility:
+Verification will be performed by ITADS DevOps team with support from application team (if required)
+Post Implementation Support:
+Continuous monitoring after deployment
+Any issues will be logged, tracked, and resolved promptly
+This confirms that the change has been successfully implemented and is stable.
