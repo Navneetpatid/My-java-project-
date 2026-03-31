@@ -1,25 +1,9 @@
-Define the G3 workflow process for application release management.
-Include steps for creating Package Work Item (PWI).
-Include configuration setup using Release Configuration Work Item (RCWI).
-Define the process for creating Release Work Item (RWI).
-Describe how packages are deployed to the target environments (Dev/UAT/Prod).
-Ensure proper linkage between PWI, RWI, and RCWI in the workflow.
-
-
-  How G3 Automation Works
-Artifact Creation (Manual + CI Automation)
-Application build generates artifacts automatically via CI tools.
-Artifacts are stored in a repository (e.g., Nexus).
-Package Work Item (PWI) Creation (Manual)
-User selects artifacts and creates the package.
-Release Configuration Work Item (RCWI) Setup (Manual – One Time)
-Define deployment steps, scripts, and target servers.
-Configure environments like Dev, UAT, or Prod.
-Release Work Item (RWI) Execution (Automated Deployment)
-Once RWI is triggered, the system automatically:
-Fetches packages (PWI)
-Uses deployment steps from RCWI
-Deploys to target environments.
-Deployment & Logging (Automated)
-G3 runs deployment steps automatically.
-Logs and status are generated for monitoring.
+STEP-4: Rollback to Previous Version (Release-3.3.1)
+In case of deployment failure, rollback will be performed using G3 Deployment Service.
+A 5-minute fix-forward window will be followed; if unresolved or critical, RWI (Automated Deployment) will be triggered. G3 will automatically:
+Fetch packages (PWI)
+Use deployment steps from RCWI
+Deploy to target environments
+Rollback will complete in <5 minutes.
+Post rollback, validation will be done (application access, API/services check, Jenkins status, logs monitoring) to confirm stability.
+Minimal impact expected (brief degradation possible, no data loss). Any outage will be recorded and stakeholders will be informed.
