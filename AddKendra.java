@@ -1,7 +1,7 @@
-This task involves adding and updating the CER (Change/Environment Record) environment details to ensure accurate and up-to-date configuration information. It includes validating environment data, updating necessary fields, and maintaining proper documentation for release and operational use.
+This task involves providing mid-release (mid-live) support to the customer during ongoing operations or deployment. It includes monitoring system behavior, resolving issues, assisting with queries, and ensuring smooth functioning of services without disruption.
 🔹 Acceptance Criteria
-CER environment details are added or updated with accurate information.
-All required fields (environment name, configs, endpoints, etc.) are properly filled.
-Updated details are verified against actual environment configuration.
-Changes are documented and accessible for stakeholders.
-No missing or outdated information remains in CER records.
+Customer support is provided during the required time window.
+All reported issues are acknowledged and addressed promptly.
+System/application stability is monitored during support period.
+Communication with stakeholders is maintained for updates and resolutions.
+No critical issues remain unresolved or are properly escalated.
