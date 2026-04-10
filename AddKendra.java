@@ -1,16 +1,7 @@
-This task involves creating and managing Change Requests (CR) for the ITADS production release. It includes preparing and updating all required documentation and pages such as ICE and Confluence to ensure proper tracking, approval, and release readiness.
+This task involves adding and updating the CER (Change/Environment Record) environment details to ensure accurate and up-to-date configuration information. It includes validating environment data, updating necessary fields, and maintaining proper documentation for release and operational use.
 🔹 Acceptance Criteria
-Change Request (CR) is created with all required details.
-ICE entry is created/updated with accurate release information.
-Confluence pages are created and updated with CR details and documentation.
-All required approvals and validations for CR are completed.
-All CR-related links (JIRA, ICE, Confluence) are properly mapped and accessible.
-
-
-  Created and updated Change Request (CR) for ITADS production release
-Prepared and verified ICE entries with required release details
-Created and updated Confluence pages for CR documentation
-Ensured all relevant information is properly documented and structured
-Mapped JIRA, ICE, and Confluence links for traceability
-Coordinated with team for validations and required updates
-Verified completeness of all CR-related artifacts for release readiness
+CER environment details are added or updated with accurate information.
+All required fields (environment name, configs, endpoints, etc.) are properly filled.
+Updated details are verified against actual environment configuration.
+Changes are documented and accessible for stakeholders.
+No missing or outdated information remains in CER records.
