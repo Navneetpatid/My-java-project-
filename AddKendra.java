@@ -1,23 +1,7 @@
-Happy path flow executes successfully without errors.
-Expected results match actual results for all key steps.
-Testing completed in the required environment.
-Screenshots/logs collected as execution evidence.
-No critical defects remain open for the release.
-  This task focuses on validating the happy path scenario for release 3.3.2 to ensure the application works as expected under normal conditions. It also includes collecting and documenting execution evidence (logs, screenshots, outputs) to support release readiness and audit requirements.
-
-  Executed happy path scenarios for release 3.3.2
-
-Validated expected vs actual results for all key workflows
-
-Performed testing in the required environment with all dependencies up
-
-Collected evidence including screenshots and logs
-
-No critical issues identified during testing
-
-  Re-tested happy path scenarios for release 3.3.2 to ensure stability
-Performed additional validation on edge cases within primary workflows
-Verified fixes and ensured previously tested flows are working as expected
-Cross-checked logs and system behavior for consistency
-Organized and updated all collected test evidence and documentation
-Coordinated with team for clarification and validation updates
+This task involves creating and managing Change Requests (CR) for the ITADS production release. It includes preparing and updating all required documentation and pages such as ICE and Confluence to ensure proper tracking, approval, and release readiness.
+🔹 Acceptance Criteria
+Change Request (CR) is created with all required details.
+ICE entry is created/updated with accurate release information.
+Confluence pages are created and updated with CR details and documentation.
+All required approvals and validations for CR are completed.
+All CR-related links (JIRA, ICE, Confluence) are properly mapped and accessible.
